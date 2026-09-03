@@ -190,6 +190,7 @@ label{display:block;margin:10px auto;max-width:300px;color:var(--sub);font-size:
     <button id="friendsBtn" onclick="openFriends()" style="background:var(--card);border:1px solid #ffffff44;color:var(--gold);font-weight:800;padding:8px 12px;border-radius:30px;cursor:pointer;font-size:.85rem" hidden>👥 <span class="lang-ar">أصدقائي</span><span class="lang-en">Friends</span></button>
     <button id="logoutBtn" onclick="logout()" style="background:var(--card);border:1px solid #ffffff44;color:var(--pink);font-weight:800;padding:8px 12px;border-radius:30px;cursor:pointer;font-size:.85rem" hidden>↩</button>
     <button id="langBtn" onclick="toggleLang()">EN</button>
+    <button id="installBtn" onclick="installApp()" style="display:none;background:var(--card);border:1px solid var(--neon);color:var(--neon);font-weight:800;padding:8px 12px;border-radius:30px;cursor:pointer;font-size:.8rem">📲 <span class="lang-ar">تثبيت</span><span class="lang-en">Install</span></button>
   </div>
 </header>
 
@@ -3017,6 +3018,24 @@ window.addEventListener('load', async ()=>{
   switchAuth('login'); pickGender('male');
 });
 /* ---- PWA service worker ---- */
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault();
+  deferredPrompt=e;
+  const b=document.getElementById('installBtn');
+  if(b) b.style.display='inline-block';
+});
+window.addEventListener('appinstalled',function(){
+  const b=document.getElementById('installBtn');
+  if(b) b.style.display='none';
+  deferredPrompt=null;
+});
+function installApp(){
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(){ deferredPrompt=null; });
+  }
+}
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
     navigator.serviceWorker.register('/sw.js').catch(function(){});
