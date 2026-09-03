@@ -346,7 +346,7 @@ try{
 function playOk(){ try{ sfxOk.play(); }catch(e){} }
 
 /* ============ STATE ============ */
-const totalGames=13;
+const totalGames=15;
 let gameStars = JSON.parse(localStorage.getItem('fgames')||'{}');
 let deduction = parseInt(localStorage.getItem('fded')||'0');
 let currentGame=0;
@@ -373,6 +373,8 @@ const BGS = {
   "wrong":{"icon":"🚫","name":"AnswerWrong","ti":"جاوب غلط","d":{"ar":"أجب عمداً بالإجابة الخاطئة","en":"Answer all questions wrong on purpose"}},
   "spy":  {"icon":"🕵️","name":"Spy","ti":"الجاسوس","d":{"ar":"جاسوس بينكم (3-8 لاعبين) اكشفوه","en":"A spy among you (3-8 players) find him"}},
   "race": {"icon":"🏎️","name":"KnowledgeRace","ti":"سباق المعرفة","d":{"ar":"تنافسوا أونلاين — أول من يجيب صح يحصد النقطة","en":"Compete online — first correct answer scores"}},
+  "word": {"icon":"🔤","name":"WordJumble","ti":"رتب الكلمة","d":{"ar":"رتّب الحروف لتكوّن أطول كلمة","en":"Unscramble letters to make a word"}},
+  "wordl":{"icon":"🎨","name":"WordReveal","ti":"اكشف الكلمة","d":{"ar":"واحد يشرح والباقي يخمّنون (أونلاين)","en":"One explains, the rest guess (online)"}},
 };
 const GAMES = [
   {id:"mem", un:"ARABIC"},
@@ -388,6 +390,8 @@ const GAMES = [
   {id:"wrong", un:null},
   {id:"spy", un:null},
   {id:"race", un:null},
+  {id:"word", un:null},
+  {id:"wordl", un:null},
 ];
 const QUIZ_TOPICS = ["general","geo","science","history","animals"];
 
@@ -443,6 +447,8 @@ function startGame(i){
     case 'wrong': initWrong();break;
     case 'spy': initSpy();break;
     case 'race': initRace();break;
+    case 'word': initWord();break;
+    case 'wordl': initWordl();break;
   }
 }
 function award(stars){
@@ -1172,6 +1178,80 @@ function tryGuess(){
 }
 function aword2(s){ award(s); }
 
+/* ============ WORD JUMBLE ============ */
+let wordState={};
+const WORD_WORDS=[
+  "كتاب","قلم","مدرسة","حديقة","سيارة","طائرة","قطار","بحر","جبل","شمس","قمر","نجمة",
+  "شجرة","وردة","تفاح","موز","برتقال","عنب","بطيخ","جزر","خبز","جبن","حليب","قهوة",
+  "ساعة","هاتف","كمبيوتر","تلفاز","مصباح","كرسي","طاولة","باب","نافذة","سطح","حائط",
+  "معلم","طبيب","مهندس","فلاح","صياد","طباخ","كاتب","رسام","مغني","بطل",
+  "سعادة","حلم","نجاح","صديق","عائلة","حب","أمل","سلام","شجاعة","ذكاء",
+];
+function initWord(){
+  wordState={idx:0,score:0,win:0,total:10,order:[]};
+  wordState.order=[...WORD_WORDS].sort(()=>Math.random()-0.5).slice(0,10);
+  wordRender();
+}
+function shuffleArr(a){ const b=a.slice(); for(let i=b.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [b[i],b[j]]=[b[j],b[i]]; } return b; }
+function wordRender(){
+  const area=document.getElementById('gameArea');
+  const w=wordState.order[wordState.idx];
+  const letters=shuffleArr(w.split(''));
+  wordState.solution=w;
+  wordState.picked=[]; // array of letter indices chosen
+  wordState.chars=letters;
+  area.innerHTML=`<div class="q-area" style="max-width:400px;margin:0 auto;text-align:center">
+    <div class="score-pill" style="display:inline-block;margin-bottom:12px">✅ <b>${wordState.win}</b>/10</div>
+    <h3>🔤 ${t("رتّب الحروف لتكوّن الكلمة","Unscramble the letters")}</h3>
+    <div style="font-size:.9rem;color:var(--sub);margin:8px 0">${t("اضغط الحروف بالترتيب الصحيح","Tap the letters in the correct order")}</div>
+    <div id="wordSlot" style="min-height:54px;display:flex;align-items:center;justify-content:center;gap:4px;background:#ffffff0d;border-radius:12px;padding:8px;margin-bottom:12px;flex-wrap:wrap"></div>
+    <div id="wordLetters" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:14px"></div>
+    <button class="btn mt" style="background:var(--card)" onclick="wordClear()">✖ ${t("مسح","Clear")}</button>
+    <div class="feedback" id="wordMsg"></div>
+  </div>`;
+  wordDrawLetters();
+  wordDrawSlot();
+}
+function wordDrawLetters(){
+  const box=document.getElementById('wordLetters');
+  if(!box) return;
+  box.innerHTML=wordState.chars.map((ch,i)=>{
+    if(wordState.picked.includes(i)) return '';
+    return `<button onclick="wordPick(${i})" style="width:44px;height:44px;border-radius:10px;border:1px solid #ffffff33;background:#ffffff14;color:#fff;font-size:1.3rem;font-weight:800">${ch}</button>`;
+  }).join('');
+}
+function wordDrawSlot(){
+  const box=document.getElementById('wordSlot');
+  if(!box) return;
+  box.innerHTML=wordState.picked.map(i=>`<span style="width:40px;height:44px;border-radius:8px;background:#4f6ef7;color:#fff;font-size:1.2rem;font-weight:800;display:flex;align-items:center;justify-content:center">${wordState.chars[i]}</span>`).join('');
+}
+function wordPick(i){
+  if(wordState.picked.includes(i)) return;
+  wordState.picked.push(i);
+  wordDrawLetters(); wordDrawSlot();
+  const cur=wordState.picked.map(x=>wordState.chars[x]).join('');
+  if(cur.length===wordState.solution.length){
+    if(cur===wordState.solution){
+      wordState.win++; wordState.score++;
+      document.getElementById('wordMsg').textContent=t("🎉 صحيح!","🎉 Correct!");document.getElementById('wordMsg').style.color='#22c55e';
+      setTimeout(()=>{ wordState.idx++; if(wordState.idx>=wordState.order.length)wordDone(); else wordRender(); },900);
+    } else {
+      document.getElementById('wordMsg').textContent=t("خطأ، حاول مجدداً","Wrong, try again");document.getElementById('wordMsg').style.color='#ef4444';
+      wordState.picked=[]; setTimeout(()=>{ wordDrawLetters(); wordDrawSlot(); },500);
+    }
+  }
+}
+function wordClear(){ wordState.picked=[]; wordDrawLetters(); wordDrawSlot(); }
+function wordDone(){
+  const area=document.getElementById('gameArea');
+  const stars=wordState.win>=9?3:wordState.win>=6?2:wordState.win>=3?1:0;
+  award(stars);
+  area.innerHTML=`<div class="result-panel"><div class="big">${wordState.win}/10</div>
+    <div class="result-msg">${t("أحسنت! رتّبت الكلمات","Well done! Words unscrambled")}</div>
+    <div class="small-stars">${starsStr(stars)}</div>
+    <button class="btn mt" onclick="initWord()">${t("العب مجدداً","Play again")}</button></div>`;
+}
+
 /* ============ GUESS COUNTRY ============ */
 let countryState={};
 const COUNTRIES=[
@@ -1590,6 +1670,16 @@ function initRace(){
     </div>
   </div>`;
 }
+function initWordl(){
+  const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="q-area" style="max-width:420px;margin:0 auto;text-align:center">
+    <h3>🎨 ${t("اكشف الكلمة","Word Reveal")}</h3>
+    <p style="color:var(--sub);font-size:.9rem">${t("يتناوب اللاعبون في شرح كلمة سرية والباقي يخمّنونها.","Players take turns explaining a secret word while the rest guess it.")}</p>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">
+      <button onclick="openWordl()" class="btn blue" style="padding:14px">🌐 ${t("العب أونلاين (كود غرفة)","Play online (room code)")}</button>
+    </div>
+  </div>`;
+}
 function initSpyLocal(){
   spyState={phase:'setup'};
   const area=document.getElementById('gameArea');
@@ -1743,14 +1833,21 @@ function openSpyOnline(){
 function openRace(){
   openMulti('race');
 }
+function openWordl(){
+  openMulti('wordl');
+}
 function openMulti(game){
   soState={code:null,id:null,players:[],phase:'lobby',myVote:undefined,game};
-  document.getElementById('soGameIcon').textContent = game==='race' ? '🏎️' : '🕵️';
+  document.getElementById('soGameIcon').textContent = game==='race' ? '🏎️' : game==='wordl' ? '🎨' : '🕵️';
   document.getElementById('soGameTitle').innerHTML = game==='race'
     ? '<span class="lang-ar">سباق المعرفة أونلاين</span><span class="lang-en">Knowledge Race Online</span>'
+    : game==='wordl'
+    ? '<span class="lang-ar">اكشف الكلمة أونلاين</span><span class="lang-en">Word Reveal Online</span>'
     : '<span class="lang-ar">الجاسوس أونلاين</span><span class="lang-en">Spy Online</span>';
   document.getElementById('soHint').innerHTML = game==='race'
     ? '<span class="lang-ar">تنافسوا — أول من يجيب صح يحصد النقطة! (3-8 أشخاص)</span><span class="lang-en">Race — first correct answer scores! (3-8 players)</span>'
+    : game==='wordl'
+    ? '<span class="lang-ar">واحد يشرح والباقي يخمّنون كلمة السر! (3-8 أشخاص)</span><span class="lang-en">One explains, the rest guess the secret word! (3-8 players)</span>'
     : '<span class="lang-ar">أنشئ غرفة وشارك الكود مع أصدقائك (3-8 أشخاص)</span><span class="lang-en">Create a room and share the code (3-8 players)</span>';
   document.getElementById('soHome').style.display='block';
   document.getElementById('soLobby').style.display='none';
@@ -1845,6 +1942,30 @@ function soHandle(msg){
   }
   if(msg.type==='raceFinal'){
     soRenderRaceFinal(msg);
+    return;
+  }
+  /* ---- اكشف الكلمة handlers ---- */
+  if(msg.type==='wlTurn'){
+    soState.phase='game';
+    soRenderWlTurn(msg);
+    return;
+  }
+  if(msg.type==='wlGuessR'){
+    const e=document.getElementById('soWlGuessMsg');
+    if(e){ e.textContent=msg.correct?t('✅ صحيح!','✅ Correct!'):t('❌ خطأ','❌ Wrong'); e.style.color=msg.correct?'#22c55e':'#ef4444'; }
+    if(msg.correct){ const i=document.getElementById('soWlGuessIn'); if(i){i.value='';i.disabled=true;} }
+    return;
+  }
+  if(msg.type==='wlCorrect'){
+    soWlCorrect(msg);
+    return;
+  }
+  if(msg.type==='wlReveal'){
+    soRenderWlReveal(msg);
+    return;
+  }
+  if(msg.type==='wlFinal'){
+    soRenderWlFinal(msg);
     return;
   }
   if(msg.type==='reveal'){
@@ -1976,6 +2097,96 @@ function soRenderRaceFinal(msg){
     ${winner?`<div style="font-size:1.5rem;font-weight:900;color:var(--gold);margin:12px 0">🏆 ${winner.name} — ${winner.score}⭐</div>`:''}
     <div style="margin:14px 0;text-align:left">${rk}</div>
     <button class="btn blue" style="width:100%;padding:13px" onclick="openRace()">${t('سباق جديد','New race')}</button>
+  </div>`;
+}
+
+/* ---- اكشف الكلمة (Word Reveal) ---- */
+function soWlScores(scores){
+  if(!scores) return '';
+  return Object.keys(scores).map(pid=>{
+    const pidN=Number(pid);
+    const p=soState.players.find(x=>x.id===pidN);
+    const nm=p?p.name:('#'+(pidN+1));
+    return `<div style="display:flex;justify-content:space-between;align-items:center;font-size:.85rem;padding:3px 0"><span>${nm}</span><b style="color:var(--gold)">${scores[pid]}⭐</b></div>`;
+  }).join('');
+}
+function soRenderWlTurn(msg){
+  document.getElementById('soHome').style.display='none';
+  document.getElementById('soLobby').style.display='none';
+  const g=document.getElementById('soGame');
+  g.style.display='block';
+  soState.wlState={round:msg.round,total:msg.total,areDar:msg.areDar,word:msg.word,endsAt:msg.endsAt};
+  g.innerHTML=`<div style="text-align:center">
+    <h3>🎨 ${t('اكشف الكلمة','Word Reveal')}</h3>
+    <div style="color:var(--gold);font-weight:800;margin:6px 0">${t('الدور','Turn')} ${msg.round}/${msg.total}</div>
+    <div style="color:var(--gold);font-weight:800;margin:6px 0" id="soWlTimer"></div>
+    <div style="margin:10px 0;color:var(--sub)">${t('الشارح','The explainer')}: <b style="color:var(--neon)">${msg.darName}</b> ${msg.areDar?'('+t('أنت','you')+')':''}</div>
+    ${msg.areDar
+      ? `<div id="soWlDar" style="margin:14px 0">
+          <div style="font-size:.9rem;color:var(--sub);margin-bottom:6px">${t('اشرحها لأصدقائك دون ذكرها حرفياً','Explain it to your friends without saying the word')}</div>
+          <div style="font-size:2rem;font-weight:900;color:var(--neon)">${msg.word}</div>
+          <button class="btn pink mt" onclick="soWlSkip()">${t('تخطي الكلمة ⏭','Skip word ⏭')}</button>
+        </div>`
+      : `<div id="soWlGuessArea" style="margin:14px 0">
+          <div style="font-size:.9rem;color:var(--sub);margin-bottom:8px">${t('اكتب تخمينك للكلمة اللي يشرحها','Type your guess for the word being described')}</div>
+          <input id="soWlGuessIn" placeholder="${t('تخمينك…','Your guess…')}" style="width:100%;padding:11px;border-radius:12px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;font-size:.9rem;box-sizing:border-box" onkeydown="if(event.key==='Enter')soWlGuess()">
+          <button class="btn blue mt" onclick="soWlGuess()" style="width:100%">${t('خمّن 🔍','Guess 🔍')}</button>
+        </div>`
+    }
+    <div id="soWlGuessMsg" style="min-height:22px;margin-top:6px"></div>
+    <div style="border-top:1px solid #ffffff22;margin-top:10px;padding-top:8px;text-align:right">
+      <div style="font-size:.85rem;color:var(--sub)">${t('النقاط','Scores')}</div>
+      <div>${soWlScores(msg.scores)}</div>
+    </div>
+  </div>`;
+  soWlTick();
+  if(soState._wlT) clearInterval(soState._wlT);
+  soState._wlT=setInterval(soWlTick,300);
+}
+function soWlTick(){
+  const left=Math.max(0,Math.ceil((soState.wlState.endsAt-Date.now())/1000));
+  const e=document.getElementById('soWlTimer');
+  if(e) e.textContent=left+'s';
+  if(left<=0&&soState._wlT) clearInterval(soState._wlT);
+}
+function soWlGuess(){
+  const i=document.getElementById('soWlGuessIn');
+  if(!soWs||!i) return;
+  const v=i.value.trim();
+  if(!v) return;
+  soWs.send(JSON.stringify({type:'wlGuess',word:v}));
+}
+function soWlSkip(){
+  if(soWs) soWs.send(JSON.stringify({type:'wlNext'}));
+}
+function soWlCorrect(msg){
+  const e=document.getElementById('soWlGuessMsg');
+  if(e){ e.textContent='🎉 '+msg.name+' '+t('خمّنها!','guessed it!'); e.style.color='#22c55e'; }
+}
+function soRenderWlReveal(msg){
+  if(soState._wlT) clearInterval(soState._wlT);
+  const g=document.getElementById('soGame');
+  g.innerHTML=`<div style="text-align:center">
+    <h3>🏷️ ${t('الكلمة كانت','The word was')}</h3>
+    <div style="font-size:2rem;font-weight:900;color:var(--neon);margin:14px 0">${msg.word}</div>
+    ${msg.passed?'<div style="color:var(--sub)">'+t('تخطاها أحدهم','Someone skipped it')+'</div>':''}
+    <div style="border-top:1px solid #ffffff22;margin-top:10px;padding-top:8px;text-align:right">
+      <div style="font-size:.85rem;color:var(--sub)">${t('النقاط','Scores')}</div>
+      <div>${soWlScores(msg.scores)}</div>
+    </div>
+  </div>`;
+}
+function soRenderWlFinal(msg){
+  if(soState._wlT) clearInterval(soState._wlT);
+  const winner=msg.ranked[0];
+  const rk=msg.ranked.map((r,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;margin-bottom:7px;background:#ffffff0e;border:1px solid #ffffff22;border-radius:10px">
+    <span>${i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'. '} ${r.name}</span><b style="color:var(--gold)">${r.score}⭐</b></div>`).join('');
+  const g=document.getElementById('soGame');
+  g.innerHTML=`<div style="text-align:center">
+    <h3>🎉 ${t('انتهت اللعبة!','The game is over!')}</h3>
+    ${winner?`<div style="font-size:1.5rem;font-weight:900;color:var(--gold);margin:12px 0">🏆 ${winner.name} — ${winner.score}⭐</div>`:''}
+    <div style="margin:14px 0;text-align:left">${rk}</div>
+    <button class="btn blue" style="width:100%;padding:13px" onclick="openWordl()">${t('جولة جديدة','New round')}</button>
   </div>`;
 }
 

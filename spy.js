@@ -205,13 +205,101 @@ function onRaceAns(room, conn, idx){
   send(conn, { type: 'raceAnswer', correct });
 }
 
+/* ================= اكشف الكلمة / شرح وتخمين (أونلاين) ================= */
+const WL_WORDS = [
+  "تفاح","موز","برتقال","عنب","بطيخ","فراولة","جزر","بطاطس","طماطم","خيار",
+  "سيارة","طائرة","قطار","دراجة","حافلة","سفينة","صاروخ","غواصة",
+  "قط","كلب","حمار","حصان","فيل","أسد","نمر","دب","ذئب","ثعلب",
+  "مدرسة","مستشفى","مطار","ملعب","مسجد","بيت","فندق","مكتبة","مطعم","سوق",
+  "شمس","قمر","نجمة","غيمة","مطر","ثلج","رياح","برق","قوس قزح","صحراء",
+  "هاتف","كمبيوتر","تلفاز","كاميرا","ساعة","نظارة","مفتاح","محفظة","حقيبة","مظلة",
+];
+const WL_ROUNDS = parseInt(process.env.SPY_WL_ROUNDS || '8', 10);
+const WL_TURN_MS = parseInt(process.env.SPY_WL_TURN_MS || '30000', 10);
+
+function initWordl(room){
+  room.phase = 'wordl';
+  room.scores = {};
+  room.wlRound = 0;
+  room.wlTurns = [];
+  room.wlGuessed = {};
+  room.wlWords = [];
+  // each player explains one word; build a list of words (reuse for all)
+  for (let i = 0; i < room.players.length; i++) room.wlTurns.push(room.players[i].id);
+  room.wlWords = WL_WORDS.slice().sort(() => Math.random() - 0.5).slice(0, room.players.length);
+  startWordlTurn(room);
+}
+function startWordlTurn(room){
+  if (room.phase !== 'wordl') return;
+  if (room.wlRound >= room.wlTurns.length){ finishWordl(room); return; }
+  const darId = room.wlTurns[room.wlRound];
+  const word = room.wlWords[room.wlRound];
+  room.wlGuessed = {};
+  room.darId = darId;
+  room.wlWord = word;
+  if (room.wlTimer) clearTimeout(room.wlTimer);
+  room.wlTimer = setTimeout(() => broadcastWordlSkill(room, false), WL_TURN_MS);
+  for (const p of room.players) {
+    const isDar = p.id === darId;
+    send(p.conn, {
+      type: 'wlTurn',
+      round: room.wlRound + 1,
+      total: room.wlTurns.length,
+      areDar: isDar,
+      word: isDar ? word : undefined,
+      darName: room.players.find(x => x.id === darId).name,
+      scores: room.scores,
+      endsAt: Date.now() + WL_TURN_MS,
+      youId: p.id,
+    });
+  }
+}
+function broadcastWordlSkill(room, passed){
+  // time up or skipped: reveal the word and move on
+  if (room.phase !== 'wordl') return;
+  if (room.wlTimer) clearTimeout(room.wlTimer);
+  broadcast(room, {
+    type: 'wlReveal',
+    word: room.wlWord,
+    passed,
+    scores: room.scores,
+    round: room.wlRound + 1,
+  });
+  room.wlRound++;
+  setTimeout(() => startWordlTurn(room), 3200);
+}
+function onWordlGuess(room, conn, guess){
+  if (room.phase !== 'wordl') return;
+  if (!room.wlWord) return;
+  if (conn.playerId === room.darId) return; // the dar cannot guess own word
+  if (room.wlGuessed[conn.playerId]) return; // one guess per player per turn
+  room.wlGuessed[conn.playerId] = true;
+  const ok = String(guess || '').trim() === room.wlWord;
+  send(conn, { type: 'wlGuessR', correct: ok });
+  if (ok){
+    room.scores[conn.playerId] = (room.scores[conn.playerId] || 0) + 1;
+    broadcast(room, { type: 'wlCorrect', id: conn.playerId, name: conn.name, word: room.wlWord, scores: room.scores });
+    if (room.wlTimer) clearTimeout(room.wlTimer);
+    room.wlRound++;
+    setTimeout(() => startWordlTurn(room), 3200);
+  }
+}
+function finishWordl(room){
+  if (room.phase !== 'wordl') return;
+  room.phase = 'result';
+  if (room.wlTimer) clearTimeout(room.wlTimer);
+  const ranked = room.players.map(p => ({ id: p.id, name: p.name, score: room.scores[p.id] || 0 })).sort((x, y) => y.score - x.score);
+  broadcast(room, { type: 'wlFinal', ranked, scores: room.scores, words: room.wlWords });
+  setTimeout(() => { for (const p of room.players) { try { p.conn.close(); } catch (e) { } } rooms.delete(room.code); }, 180000);
+}
+
 function handleMessage(conn, data) {
   const msg = (typeof data === 'string') ? data : data.toString('utf8');
   let obj;
   try { obj = JSON.parse(msg); } catch (e) { return; }
 
   if (obj.type === 'create') {
-    const game = obj.game === 'race' ? 'race' : 'spy';
+    const game = (obj.game === 'race' || obj.game === 'wordl') ? obj.game : 'spy';
     const room = { code: genCode(), phase: 'lobby', players: [], votes: {}, game };
     rooms.set(room.code, room);
     conn.roomCode = room.code;
@@ -244,6 +332,7 @@ function handleMessage(conn, data) {
     if (conn.playerId !== 0) return;
     if (room.players.length < 3) { send(conn, { type: 'error', error: 'need-more' }); return; }
     if (room.game === 'race') initRace(room);
+    else if (room.game === 'wordl') initWordl(room);
     else initRoom(room);
     return;
   }
@@ -251,6 +340,20 @@ function handleMessage(conn, data) {
   if (obj.type === 'raceAns') {
     const room = rooms.get(conn.roomCode);
     if (room) onRaceAns(room, conn, obj.idx);
+    return;
+  }
+
+  if (obj.type === 'wlGuess') {
+    const room = rooms.get(conn.roomCode);
+    if (room) onWordlGuess(room, conn, obj.word);
+    return;
+  }
+
+  if (obj.type === 'wlNext') {
+    const room = rooms.get(conn.roomCode);
+    if (!room) return;
+    if (conn.playerId !== room.darId) return; // only the current dar can skip
+    broadcastWordlSkill(room, true);
     return;
   }
 
@@ -301,6 +404,7 @@ function onClose(conn) {
     if (room.revealTimer) clearTimeout(room.revealTimer);
     if (room.voteTimer) clearTimeout(room.voteTimer);
     if (room.qTimer) clearTimeout(room.qTimer);
+    if (room.wlTimer) clearTimeout(room.wlTimer);
     rooms.delete(code);
     return;
   }
