@@ -8,7 +8,7 @@ services:
     healthCheckPath: /
     envVars:
       - key: JWT_SECRET
-        sync: false
+        value: fs-games-2026-secret-key-fkw1160-replace-in-prod
       - key: DB_PATH
         value: /data/fsgames.db
     disk:
