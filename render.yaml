@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: fs-games-app
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /
+    envVars:
+      - key: JWT_SECRET
+        sync: false
+      - key: DB_PATH
+        value: /data/fsgames.db
+    disk:
+      name: fsgames-data
+      mountPath: /data
+      sizeGB: 1
