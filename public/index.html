@@ -263,6 +263,38 @@ label{display:block;margin:10px auto;max-width:300px;color:var(--sub);font-size:
   </div>
 </div>
 
+<!-- SPY ONLINE ROOM -->
+<div id="spyOnlineScreen" style="position:fixed;inset:0;z-index:920;display:none;align-items:center;justify-content:center;background:#000000cc;padding:16px">
+  <div style="background:#1b1b3a;border:1px solid #ffffff30;border-radius:24px;padding:22px;width:100%;max-width:420px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px #00000088">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-size:1.3rem;font-weight:900;color:var(--gold)">🕵️ <span class="lang-ar">الجاسوس أونلاين</span><span class="lang-en">Spy Online</span></div>
+      <button onclick="closeSpyOnline()" style="background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer">✕</button>
+    </div>
+    <div id="soHome">
+      <p style="color:var(--sub);font-size:.9rem" class="lang-ar">أنشئ غرفة وشارك الكود مع أصدقائك (3-8 أشخاص)</p>
+      <p style="color:var(--sub);font-size:.9rem" class="lang-en">Create a room and share the code (3-8 players)</p>
+      <input id="soName" placeholder="اسمك / Your name" style="width:100%;padding:11px;border-radius:12px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;font-size:.9rem;margin-bottom:10px;box-sizing:border-box">
+      <button onclick="soCreate()" class="btn blue" style="width:100%;padding:13px;font-size:1rem;margin-bottom:14px">✨ <span class="lang-ar">إنشاء غرفة جديدة</span><span class="lang-en">Create new room</span></button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="soJoinCode" placeholder="كود الغرفة / Room code" style="flex:1;padding:11px;border-radius:12px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;font-size:.9rem;text-transform:uppercase">
+        <button onclick="soJoin()" class="btn pink" style="padding:11px 18px;font-weight:900">🔑 <span class="lang-ar">دخول</span><span class="lang-en">Join</span></button>
+      </div>
+      <div id="soErr" style="color:#ef4444;font-size:.85rem;min-height:18px;margin-top:8px"></div>
+    </div>
+    <div id="soLobby" style="display:none">
+      <div style="text-align:center;background:#ffffff08;border:1px dashed #ffffff33;border-radius:14px;padding:18px;margin-bottom:12px">
+        <div style="font-size:.85rem;color:var(--sub)"><span class="lang-ar">كود الغرفة</span><span class="lang-en">Room code</span></div>
+        <div id="soCode" style="font-size:2.6rem;font-weight:900;letter-spacing:8px;color:var(--gold)"></div>
+        <button onclick="soCopy()" class="btn" style="margin-top:8px;padding:8px 16px;font-size:.85rem">📋 <span class="lang-ar">نسخ الكود</span><span class="lang-en">Copy code</span></button>
+      </div>
+      <div style="font-size:.9rem;font-weight:800;color:var(--sub);margin-bottom:8px"><span class="lang-ar">اللاعبون</span><span class="lang-en">Players</span> (<span id="soCount">0</span>/8)</div>
+      <div id="soPlayers" style="margin-bottom:12px"></div>
+      <button id="soStartBtn" onclick="soStart()" class="btn blue" style="width:100%;padding:13px;font-size:1rem">▶ <span class="lang-ar">ابدأ اللعبة (3+ لاعبين)</span><span class="lang-en">Start game (3+ players)</span></button>
+    </div>
+    <div id="soGame" style="display:none"></div>
+  </div>
+</div>
+
 <!-- HOME -->
 <section id="home" class="screen active">
   <div class="hero">
@@ -1537,6 +1569,18 @@ let spyState={};
 function initSpy(){
   spyState={phase:'setup'};
   const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="q-area" style="max-width:420px;margin:0 auto;text-align:center">
+    <h3>🕵️ ${t("لعبة الجاسوس","Spy game")}</h3>
+    <p style="color:var(--sub);font-size:.9rem">${t("جاسوس واحد بينكم والبقية يعرفون الكلمة.","One spy among you, the rest know the word.")}</p>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">
+      <button onclick="initSpyLocal()" class="btn blue" style="padding:14px">📱 ${t("العب محلياً (جوال واحد يتناقلونه)","Play locally (pass one phone)")}</button>
+      <button onclick="openSpyOnline()" class="btn pink" style="padding:14px">🌐 ${t("العب أونلاين (كود غرفة)","Play online (room code)")}</button>
+    </div>
+  </div>`;
+}
+function initSpyLocal(){
+  spyState={phase:'setup'};
+  const area=document.getElementById('gameArea');
   let players='';
   for(let i=1;i<=8;i++){
     players+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
@@ -1545,8 +1589,8 @@ function initSpy(){
     </div>`;
   }
   area.innerHTML=`<div class="q-area" style="max-width:420px;margin:0 auto">
+    <button class="btn mt" style="background:var(--card)" onclick="initSpy()">←</button>
     <h3>🕵️ ${t("لعبة الجاسوس","Spy game")}</h3>
-    <p style="color:var(--sub);font-size:.9rem">${t("العبوا مع بعض (3-8 أشخاص). جاسوس واحد بينكم، والبقية يعرفون الكلمة. مرّروا الجوال واكشفوا من الجاسوس!","Play together (3-8). One spy among you, the rest know the word. Pass the phone to find the spy!")}</p>
     <div style="font-size:.9rem;font-weight:800;color:var(--sub);margin:10px 0 8px">${t("عدد اللاعبين","Players count")}: <b id="spyCount">3</b></div>
     <input type="range" id="spyNum" min="3" max="8" value="3" style="width:100%" oninput="spyCountSet(this.value)">
     <div id="spyPlayers" style="margin-top:12px"></div>
@@ -1675,6 +1719,224 @@ function spyRevealResult(){
     <div style="font-size:1.2rem;font-weight:900;color:${caught?'#22c55e':'#e53935'}">${caught?t('🎉 انكشف الجاسوس!','🎉 The spy was caught!'):t('😱 الجاسوس هرب بلا تصويت ضده!','😱 The spy escaped unpinned!')}</div>
     <button class="btn blue mt" onclick="initSpy()">${t("جولة جديدة","New round")}</button>
     <button class="btn mt" style="background:var(--card)" onclick="goHome()">${t("القائمة الرئيسية","Home")}</button>
+  </div>`;
+}
+
+/* ============ الجاسوس أونلاين (WebSocket) ============ */
+let soWs=null;
+let soState={code:null,id:null,players:[],phase:'lobby'};
+function openSpyOnline(){
+  document.getElementById('soHome').style.display='block';
+  document.getElementById('soLobby').style.display='none';
+  document.getElementById('soGame').style.display='none';
+  document.getElementById('soGame').innerHTML='';
+  document.getElementById('spyOnlineScreen').style.display='flex';
+  soErrClear();
+}
+function closeSpyOnline(){
+  if(soWs){ try{ soWs.close(); }catch(e){} soWs=null; }
+  document.getElementById('spyOnlineScreen').style.display='none';
+}
+function soErrClear(){ const e=document.getElementById('soErr'); if(e)e.textContent=''; }
+function soErr(m){ const e=document.getElementById('soErr'); if(e)e.textContent=m; }
+
+function wsUrl(){
+  const p=(location.protocol==='https:')?'wss://':'ws://';
+  return p+location.host+'/ws';
+}
+function soConnect(onopen){
+  soWs = new WebSocket(wsUrl());
+  soWs.onopen = ()=>onopen();
+  soWs.onerror = ()=>soErr(t('تعذر الاتصال بالخادم','Could not connect to server'));
+  soWs.onclose = ()=>{ if(soState.phase!=='lobby'){} soWs=null; };
+  soWs.onmessage = (e)=>{
+    let msg; try{ msg=JSON.parse(e.data); }catch(x){ return; }
+    soHandle(msg);
+  };
+}
+function soName(){ const v=document.getElementById('soName').value.trim(); return v||(lang==='en'?'Player':'لاعب'); }
+function soCreate(){
+  soErrClear();
+  const name=soName();
+  soConnect(()=>{ soWs.send(JSON.stringify({type:'create',name})); });
+}
+function soJoin(){
+  soErrClear();
+  const code=document.getElementById('soJoinCode').value.trim().toUpperCase();
+  if(!code){ soErr(t('اكتب الكود','Enter code')); return; }
+  soConnect(()=>{ soWs.send(JSON.stringify({type:'join',code,name:soName()})); });
+}
+function soCopy(){
+  const v=document.getElementById('soCode').textContent;
+  if(navigator.clipboard) navigator.clipboard.writeText(v).then(()=>toast(t('تم نسخ الكود','Code copied')));
+  else toast(v);
+}
+function soStart(){ if(soWs) soWs.send(JSON.stringify({type:'start'})); }
+
+function soHandle(msg){
+  if(msg.type==='welcome') return;
+  if(msg.type==='error'){
+    soErr(msg.error==='room-not-found'?t('الغرفة غير موجودة','Room not found')
+         :msg.error==='room-full'?t('الغرفة ممتلئة (8)','Room full (8)')
+         :msg.error==='game-started'?t('اللعبة بدأت','Game already started')
+         :msg.error==='need-more'?t('تحتاج 3 لاعبين على الأقل','Need at least 3 players')
+         :t('خطأ','Error'));
+    return;
+  }
+  if(msg.type==='joined'){
+    soState.code=msg.code; soState.id=msg.youId;
+    document.getElementById('soCode').textContent=msg.code;
+    document.getElementById('soHome').style.display='none';
+    document.getElementById('soLobby').style.display='block';
+    document.getElementById('soGame').style.display='none';
+    soState.phase='lobby';
+    soRenderLobby(msg);
+    return;
+  }
+  if(msg.type==='room'){
+    if(soState.phase==='game') return; // already playing, ignore board room pings
+    soRenderLobby(msg);
+    return;
+  }
+  if(msg.type==='reveal'){
+    soState.phase='game';
+    soRenderReveal(msg);
+    return;
+  }
+  if(msg.type==='votePhase'){
+    soState.phase='voting';
+    soRenderVote(msg);
+    return;
+  }
+  if(msg.type==='voteUpdate'){
+    soUpdateVotes(msg);
+    return;
+  }
+  if(msg.type==='result'){
+    soState.phase='result';
+    soRenderResult(msg);
+    return;
+  }
+}
+
+function soRenderLobby(msg){
+  soState.players=(msg.players||[]);
+  document.getElementById('soCount').textContent=soState.players.length;
+  const box=document.getElementById('soPlayers');
+  box.innerHTML=soState.players.map(p=>{
+    const host=p.id===0?' 👑':'';
+    return `<div style="display:flex;align-items:center;gap:8px;background:#ffffff10;border:1px solid #ffffff22;border-radius:10px;padding:9px 12px;margin-bottom:7px">
+      <span style="width:30px;height:30px;border-radius:50%;background:#4f6ef7;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.9rem">${p.id+1}</span>
+      <b>${p.name}</b>${p.id===soState.id?' <span style="color:var(--neon);font-size:.8rem">(أنت/You)</span>':''}${host}
+    </div>`;
+  }).join('');
+  const sBtn=document.getElementById('soStartBtn');
+  if(soState.id===0){ sBtn.style.display='block'; sBtn.disabled = soState.players.length<3; }
+  else sBtn.style.display='none';
+}
+
+function soRenderReveal(msg){
+  document.getElementById('soHome').style.display='none';
+  document.getElementById('soLobby').style.display='none';
+  const g=document.getElementById('soGame');
+  g.style.display='block';
+  const isSpy=msg.isSpy;
+  const word=msg.word;
+  g.innerHTML=`<div style="text-align:center;padding:10px 0">
+    <div style="font-size:.9rem;color:var(--sub);margin-bottom:6px">${t('هذه كلمتك السرية (لا تطلعها لأحد!)','Your secret word (keep it hidden!)')}</div>
+    <div id="soRvWord" style="font-size:2.4rem;font-weight:900;color:${isSpy?'#e53935':'var(--neon)'};min-height:60px">❓</div>
+    <div id="soRvRole" style="font-size:1.1rem;margin:8px 0;color:var(--sub)"></div>
+    <div style="color:var(--gold);font-weight:800;margin:10px 0" id="soRvTimer"></div>
+    <button id="soRvBtn" class="btn blue" style="width:100%;padding:13px" onclick="soRevealShow()">${t('أظهر كلمتي 👁','Show my word 👁')}</button>
+  </div>`;
+  soState._reveal={isSpy,word,endsAt:msg.revealEndsAt};
+  soRvTick();
+  if(soState._revealT) clearInterval(soState._revealT);
+  soState._revealT=setInterval(soRvTick,500);
+}
+function soRvTick(){
+  const left=Math.max(0,Math.ceil((soState._reveal.endsAt-Date.now())/1000));
+  const e=document.getElementById('soRvTimer');
+  if(e) e.textContent=t('مرحلة الكشف','Reveal phase')+' · '+left+'s';
+  if(left<=0){ if(soState._revealT) clearInterval(soState._revealT); }
+}
+function soRevealShow(){
+  const r=soState._reveal;
+  document.getElementById('soRvWord').textContent = r.isSpy ? '🕵️' : r.word;
+  document.getElementById('soRvRole').innerHTML = r.isSpy
+    ? '<span style="color:#e53935;font-weight:900">'+t('أنت الجاسوس!','You are the spy!')+'</span>'
+    : (t('كلمتك:','Your word: ')+'<b>'+r.word+'</b>');
+  const b=document.getElementById('soRvBtn'); if(b){ b.style.display='none'; }
+  const p=document.getElementById('soRvRole');
+  p.innerHTML += '<div style="margin-top:12px;color:var(--sub);font-size:.85rem">'+t('احفظها وانتظر بقية اللاعبين…','Memorize it and wait for the others…')+'</div>';
+}
+
+function soRenderVote(msg){
+  document.getElementById('soGame').style.display='block';
+  soState.phase='voting';
+  soState.voteEnds=msg.voteEndsAt;
+  const g=document.getElementById('soGame');
+  g.innerHTML=`<div style="text-align:center">
+    <h3>🗳 ${t('من هو الجاسوس؟','Who is the spy?')}</h3>
+    <div style="color:var(--gold);font-weight:800;margin:6px 0" id="soVoteTimer"></div>
+    <div style="font-size:.85rem;color:var(--sub);margin-bottom:10px">${t('ناقشوا بصوت، ثم اضغط على الشخص المشتبه به لتصويت واحد.','Discuss aloud, then tap a suspect to cast a vote.')}</div>
+    <div id="soVoteList"></div>
+  </div>`;
+  soState.players.forEach((p,idx)=>{
+    // voter display: show all suspects (except self optionally) as tap buttons
+  });
+  // build buttons from current players list
+  soPollVoteList();
+  if(soState._voteT) clearInterval(soState._voteT);
+  soState._voteT=setInterval(()=>{ soVoteTick(); },500);
+}
+function soPollVoteList(){
+  // use the latest player names
+  const list=document.getElementById('soVoteList');
+  if(!list) return;
+  list.innerHTML=soState.players.map((p,idx)=>{
+    const v=(soState.votes&&soState.votes[idx])||0;
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <button onclick="soVote(${idx})" style="flex:1;text-align:right;padding:11px 12px;border-radius:10px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;font-weight:800">${p.name}</button>
+      <span style="color:var(--gold);font-weight:800;width:22px">${v}</span>
+    </div>`;
+  }).join('');
+}
+function soVoteTick(){
+  const left=Math.max(0,Math.ceil((soState.voteEnds-Date.now())/1000));
+  const e=document.getElementById('soVoteTimer');
+  if(e) e.textContent=t('التخمين','Voting')+' · '+left+'s';
+}
+function soVote(idx){
+  if(soWs) soWs.send(JSON.stringify({type:'vote',targetId:idx}));
+}
+function soUpdateVotes(msg){
+  soState.votes=msg.votes;
+  const list=document.getElementById('soVoteList');
+  if(list){
+    // update numbers without rebuilding whole layout to keep simple
+    list.innerHTML=soState.players.map((p,idx)=>{
+      const v=(soState.votes&&soState.votes[idx])||0;
+      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <button onclick="soVote(${idx})" style="flex:1;text-align:right;padding:11px 12px;border-radius:10px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;font-weight:800">${p.name}</button>
+        <span style="color:var(--gold);font-weight:800;width:22px">${v}</span>
+      </div>`;
+    }).join('');
+  }
+}
+function soRenderResult(msg){
+  if(soState._voteT) clearInterval(soState._voteT);
+  if(soState._revealT) clearInterval(soState._revealT);
+  document.getElementById('soGame').style.display='block';
+  const g=document.getElementById('soGame');
+  const spyName=(msg.players&&msg.players[msg.spyIdx]&&msg.players[msg.spyIdx].name)||'?';
+  g.innerHTML=`<div style="text-align:center">
+    <h3>🔎 ${t('النتيجة','The result')}</h3>
+    <div style="font-size:1.6rem;font-weight:900;color:#e53935;margin:10px 0">🕵️ ${spyName}</div>
+    <div style="color:var(--sub);font-size:.9rem">${t('الكلمة الحقيقية','The real word')} → <b style="color:var(--neon)">${msg.pair[0]}</b></div>
+    <div style="color:var(--sub);font-size:.9rem">${t('كلمة الجاسوس','Spy\'s word')} → <b style="color:#e53935">${msg.pair[1]}</b></div>
+    <div style="font-size:1.2rem;font-weight:900;margin:14px 0;color:${msg.caught?'#22c55e':'#e53935'}">${msg.caught?t('🎉 انكشف الجاسوس!','🎉 The spy was caught!'):t('😱 الجاسوس هرب!','😱 The spy escaped!')}</div>
+    <button class="btn blue" style="width:100%;padding:13px" onclick="openSpyOnline()">${t('غرفة جديدة','New room')}</button>
   </div>`;
 }
 

@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const http = require('http');
+const { WebSocketServer } = require('ws');
 
 const { db, dbPath } = require('./db');
 const { backup } = require('./backup');
@@ -228,7 +230,11 @@ app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'adm
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
-app.listen(PORT, () => {
+const server = http.createServer(app);
+const { attach } = require('./spy');
+attach(server);
+
+server.listen(PORT, () => {
   console.log('F&S Games server running on port ' + PORT);
   // persist DB to GitHub backup every 45 seconds (best-effort)
   setInterval(() => backup(dbPath), 45000);
