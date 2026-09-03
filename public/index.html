@@ -231,16 +231,35 @@ label{display:block;margin:10px auto;max-width:300px;color:var(--sub);font-size:
 <div id="friendsScreen" style="position:fixed;inset:0;z-index:900;display:none;align-items:center;justify-content:center;background:#000000cc;padding:16px">
   <div style="background:#1b1b3a;border:1px solid #ffffff30;border-radius:24px;padding:22px;width:100%;max-width:440px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px #00000088">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <div style="font-size:1.3rem;font-weight:900;color:var(--gold)">👥 <span class="lang-ar">أصدقائي</span><span class="lang-en">My Friends</span></div>
+      <div style="font-size:1.3rem;font-weight:900;color:var(--gold)">👥 <span class="lang-ar">الأصدقاء</span><span class="lang-en">Friends</span></div>
       <button onclick="closeFriends()" style="background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer">✕</button>
     </div>
     <div style="display:flex;gap:8px;margin-bottom:14px">
-      <input id="searchUser" placeholder="Username / اكتب اسم المستخدم" style="flex:1;padding:11px;border-radius:12px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;font-size:.9rem">
-      <button onclick="searchUsers()" style="padding:11px 16px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--neon),var(--pink));color:#fff;font-weight:900;cursor:pointer">🔎</button>
+      <button onclick="toggleAddFriend()" id="addFriendBtn" style="flex:1;padding:13px;border-radius:14px;border:none;background:linear-gradient(135deg,var(--neon),var(--pink));color:#fff;font-weight:900;cursor:pointer;font-size:.95rem">➕ <span class="lang-ar">إضافة صديق</span><span class="lang-en">Add Friend</span></button>
     </div>
-    <div id="searchResults" style="margin-bottom:12px"></div>
+    <div id="addFriendBox" style="display:none;margin-bottom:14px">
+      <div style="font-size:.95rem;font-weight:800;color:var(--sub);margin-bottom:8px"><span class="lang-ar">ابحث عن مستخدم وأضفه</span><span class="lang-en">Search a user to add</span></div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <input id="searchUser" placeholder="Username / اكتب اسم المستخدم" style="flex:1;padding:11px;border-radius:12px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;font-size:.9rem">
+        <button onclick="searchUsers()" style="padding:11px 16px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--neon),var(--pink));color:#fff;font-weight:900;cursor:pointer">🔎</button>
+      </div>
+      <div id="searchResults"></div>
+    </div>
     <div style="font-size:1rem;font-weight:800;color:var(--sub);margin-bottom:8px"><span class="lang-ar">قائمة الأصدقاء</span><span class="lang-en">Friends list</span></div>
     <div id="friendsList"></div>
+  </div>
+</div>
+
+<!-- FRIEND OPTIONS -->
+<div id="friendOptions" style="position:fixed;inset:0;z-index:950;display:none;align-items:center;justify-content:center;background:#00000099;padding:16px">
+  <div style="background:#1b1b3a;border:1px solid #ffffff30;border-radius:20px;padding:22px;width:100%;max-width:340px;text-align:center">
+    <div style="font-size:1.2rem;font-weight:900;color:var(--gold);margin-bottom:4px" id="foName"></div>
+    <div style="font-size:.85rem;color:var(--sub);margin-bottom:18px" id="foStatus"></div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button id="foInvite" onclick="foInvite()" style="padding:13px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--neon),var(--cyan2));color:#fff;font-weight:900;cursor:pointer;font-size:.95rem">📨 <span class="lang-ar">إرسال دعوة</span><span class="lang-en">Send Invite</span></button>
+      <button id="foRemove" onclick="foRemove()" style="padding:13px;border-radius:12px;border:none;background:#e53935;color:#fff;font-weight:900;cursor:pointer;font-size:.95rem">🗑 <span class="lang-ar">إزالة صديق</span><span class="lang-en">Remove Friend</span></button>
+      <button onclick="closeFriendOptions()" style="padding:11px;border-radius:12px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;font-weight:800;cursor:pointer;font-size:.9rem"><span class="lang-ar">إغلاق</span><span class="lang-en">Close</span></button>
+    </div>
   </div>
 </div>
 
@@ -296,7 +315,7 @@ try{
 function playOk(){ try{ sfxOk.play(); }catch(e){} }
 
 /* ============ STATE ============ */
-const totalGames=10;
+const totalGames=12;
 let gameStars = JSON.parse(localStorage.getItem('fgames')||'{}');
 let deduction = parseInt(localStorage.getItem('fded')||'0');
 let currentGame=0;
@@ -320,6 +339,8 @@ const BGS = {
   "t3":   {"icon":"⭕","name":"TicTacToe","ti":"إكس أو","d":{"ar":"لعبة إكس أو الكلاسيكية","en":"Classic tic-tac-toe"}},
   "guess":{"icon":"🔢","name":"GuessNum","ti":"خمن الرقم","d":{"ar":"خمن الرقم السري","en":"Guess the secret number"}},
   "slots":{"icon":"🌍","name":"GuessCountry","ti":"خمن الدولة","d":{"ar":"خمن الدولة من العلم (الرموز)","en":"Guess the country (from clues)"}},
+  "wrong":{"icon":"🚫","name":"AnswerWrong","ti":"جاوب غلط","d":{"ar":"أجب عمداً بالإجابة الخاطئة","en":"Answer all questions wrong on purpose"}},
+  "spy":  {"icon":"🕵️","name":"Spy","ti":"الجاسوس","d":{"ar":"جاسوس بينكم (3-8 لاعبين) اكشفوه","en":"A spy among you (3-8 players) find him"}},
 };
 const GAMES = [
   {id:"mem", un:"ARABIC"},
@@ -332,6 +353,8 @@ const GAMES = [
   {id:"t3", un:null},
   {id:"guess", un:null},
   {id:"slots", un:null},
+  {id:"wrong", un:null},
+  {id:"spy", un:null},
 ];
 const QUIZ_TOPICS = ["general","geo","science","history","animals"];
 
@@ -384,6 +407,8 @@ function startGame(i){
     case 't3': initT3();break;
     case 'guess': initGuess();break;
     case 'slots': initSlots();break;
+    case 'wrong': initWrong();break;
+    case 'spy': initSpy();break;
   }
 }
 function award(stars){
@@ -1352,22 +1377,56 @@ function renderFriends(){
   const list=document.getElementById('friendsList');
   if(!friendCache.length){ list.innerHTML='<div style="color:var(--sub);text-align:center;padding:20px">'+(lang==='en'?'No friends yet. Search and add friends!':'لا يوجد أصدقاء بعد — ابحث وأضف أصدقاءك!')+'</div>'; return; }
   list.innerHTML = friendCache.map(f=>{
-    const pendingIncoming = f.status==='pending'; // showing from requester's perspective
     const icon = f.gender==='female'?'👧':'👦';
-    let btn='';
+    let badge='';
     if(f.status==='pending'){
-      btn = '<span style="color:var(--gold);font-size:.8rem">'+(lang==='en'?'Pending…':'بانتظار القبول')+'</span>';
+      badge = '<span style="color:var(--gold);font-size:.75rem">⏳ '+(lang==='en'?'Pending…':'بانتظار القبول')+'</span>';
     } else {
-      btn = '<span style="color:#34d399;font-size:.85rem;font-weight:800">✓ '+(lang==='en'?'Friend':'صديق')+'</span>';
+      badge = '<span style="color:#34d399;font-size:.8rem;font-weight:800">✓ '+(lang==='en'?'Friend':'صديق')+'</span>';
     }
-    return `<div style="display:flex;justify-content:space-between;align-items:center;background:#ffffff10;border:1px solid #ffffff22;border-radius:12px;padding:10px 12px;margin-bottom:8px">
+    return `<div onclick="openFriendOptions(${f.id},'${f.username}','${f.status}')" style="display:flex;justify-content:space-between;align-items:center;background:#ffffff10;border:1px solid #ffffff22;border-radius:12px;padding:10px 12px;margin-bottom:8px;cursor:pointer">
       <div style="display:flex;align-items:center;gap:8px">
         <span style="width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${f.avatar_color};font-size:1.2rem">${icon}</span>
         <div><div style="font-weight:800">${f.username}</div><div style="font-size:.75rem;color:var(--sub)">🏆 ${f.total_score}</div></div>
       </div>
-      <div>${btn}</div>
+      <div style="display:flex;align-items:center;gap:6px">${badge}<span style="color:var(--sub);font-size:.8rem">⋯</span></div>
     </div>`;
   }).join('');
+}
+
+let selectedFriend = null;
+function toggleAddFriend(){
+  const box=document.getElementById('addFriendBox');
+  const on = box.style.display==='none' || box.style.display==='';
+  box.style.display = on?'block':'none';
+  document.getElementById('addFriendBtn').innerHTML = on
+    ? '✕ <span class="lang-ar">إغلاق البحث</span><span class="lang-en">Close search</span>'
+    : '➕ <span class="lang-ar">إضافة صديق</span><span class="lang-en">Add Friend</span>';
+  if(on) document.getElementById('searchUser').focus();
+}
+
+function openFriendOptions(id, username, status){
+  selectedFriend = { id, username, status };
+  document.getElementById('foName').textContent = username;
+  const st = document.getElementById('foStatus');
+  st.textContent = status==='pending'
+    ? (lang==='en'?'Pending request · tap to send invite again':'طلب بانتظار القبول · اضغف لإرسال الدعوة مجدداً')
+    : (lang==='en'?'Your friend · tap to remove':'صديقك · اضغط للإزالة');
+  document.getElementById('friendOptions').style.display='flex';
+}
+function closeFriendOptions(){ document.getElementById('friendOptions').style.display='none'; selectedFriend=null; }
+
+async function foInvite(){
+  if(!selectedFriend) return;
+  sendFriendRequest(selectedFriend.username);
+  closeFriendOptions();
+}
+
+async function foRemove(){
+  if(!selectedFriend) return;
+  const r=await api('/api/friends/remove',{ method:'POST', body:JSON.stringify({ friendId:selectedFriend.id }) });
+  if(r.ok){ toast(lang==='en'?'Friend removed':'تمت إزالة الصديق'); loadFriends(); }
+  closeFriendOptions();
 }
 
 function searchUsers(){
@@ -1397,6 +1456,226 @@ async function sendFriendRequest(username){
 function pushScore(){
   if(!curUser) return;
   api('/api/score',{ method:'POST', body:JSON.stringify({ total_score:curScore.total_score, games_won:curScore.games_won }) });
+}
+
+/* ============ جاوب غلط (Answer Wrong) ============ */
+const WRONG_BANK = [
+ {q:"كم عدد أيام الأسبوع؟",a:["5","6","7","8"],c:2},
+ {q:"ما هي أكبر قارة في العالم؟",a:["أفريقيا","آسيا","أوروبا","أمريكا"],c:1},
+ {q:"كم عدد ألوان قوس قزح؟",a:["5","6","7","8"],c:2},
+ {q:"ما هي عاصمة السعودية؟",a:["جدة","الرياض","مكة","الدمام"],c:1},
+ {q:"كم عدد أرجل العنكبوت؟",a:["6","8","10","4"],c:1},
+ {q:"ما هو أكبر محيط في العالم؟",a:["الأطلسي","الهادي","الهندي","المتجمد"],c:1},
+ {q:"كم عدد حواس الإنسان الأساسية؟",a:["4","5","6","7"],c:1},
+ {q:"كم عدد ساعات اليوم؟",a:["12","20","24","30"],c:2},
+ {q:"كم عدد أصابع اليد الواحدة؟",a:["3","4","5","6"],c:2},
+ {q:"ما هي عاصمة قطر؟",a:["الدوحة","أبوظبي","المنامة","مسقط"],c:0},
+ {q:"ما هو لون البحر عادةً؟",a:["أحمر","أخضر","أزرق","أصفر"],c:2},
+ {q:"كم عدد القارات في العالم؟",a:["5","6","7","8"],c:2},
+ {q:"ما هي عاصمة فرنسا؟",a:["لندن","باريس","روما","مدريد"],c:1},
+ {q:"كم عدد كواكب المجموعة الشمسية؟",a:["7","8","9","10"],c:1},
+ {q:"ما هو لون العشب عادةً؟",a:["أحمر","أخضر","أزرق","أسود"],c:1},
+ {q:"كم عدد أطراف النجمة الخماسية؟",a:["3","4","5","6"],c:2},
+ {q:"ما هو أكبر حيوان بري؟",a:["الفيل","الأسد","النمر","الزرافة"],c:0},
+ {q:"كم عدد ألوان إشارة المرور؟",a:["2","3","4","5"],c:1},
+ {q:"ما هي اللغة التي يتحدث بها أهل مصر؟",a:["الإنجليزية","العربية","الفرنسية","التركية"],c:1},
+ {q:"في أي بلد يقع برج إيفل؟",a:["إيطاليا","إسبانيا","فرنسا","ألمانيا"],c:2},
+ {q:"ما هو صلصلة الوقت (كيف نسمي 60 دقيقة)؟",a:["ثانية","دقيقة","ساعة","يوم"],c:2},
+ {q:"كم شهر في السنة الميلادية؟",a:["10","11","12","13"],c:2},
+ {q:"ما هو الكوكب الأحمر؟",a:["الأرض","المريخ","المشتري","زحل"],c:1},
+ {q:"كم عدد عجلات السيارة؟",a:["2","3","4","6"],c:2},
+ {q:"ما هو الحيوان الملقب بملك الغابة؟",a:["الفيل","الأسد","النمر","الدب"],c:1},
+];
+const WRONG_PER=10;
+let wrongState={};
+function initWrong(){
+  wrongState={idx:0,wrongScore:0,total:WRONG_BANK.length};
+  wrongState.order=[...WRONG_BANK].sort(()=>Math.random()-0.5);
+  showWrongQ();
+}
+function showWrongQ(){
+  const area=document.getElementById('gameArea');
+  const q=wrongState.order[wrongState.idx];
+  area.innerHTML=`<div class="q-box">
+    <div class="q-sub">🚫 ${t("جاوب غلط — اختر الإجابة الخاطئة عمداً","Answer Wrong — pick the WRONG answer on purpose")}</div>
+    <div class="q-text">${q.q}</div>
+    <div class="options" id="wrongOpts"></div>
+    <div class="hint" style="margin-top:12px">${t("غلطات صحيحة","Wrong answers")}: <b style="color:#22c55e">${wrongState.wrongScore}</b> / ${wrongState.idx}</div>
+  </div>`;
+  const o=document.getElementById('wrongOpts');
+  q.a.forEach((ans,i)=>{
+    const b=document.createElement('button');b.className='opt';b.textContent=ans;
+    b.onclick=()=>{ if(b.classList.contains('disabled'))return; b.classList.add('disabled');
+      // هدف اللعبة: أجب بالخطأ عمداً
+      if(i===q.c){ b.classList.add('wrong'); document.querySelectorAll('#wrongOpts .opt').forEach(x=>x.classList.add('disabled')); toast(t("أجبت صح! خسرت نقطة","Correct! You lost a point")); }
+      else { b.classList.add('correct'); document.querySelectorAll('#wrongOpts .opt')[q.c].classList.add('wrong'); wrongState.wrongScore++; }
+      setTimeout(()=>{ wrongState.idx++; if(wrongState.idx<WRONG_PER)showWrongQ(); else wrongDone(); },900);
+    };
+    o.appendChild(b);
+  });
+}
+function wrongDone(){
+  const area=document.getElementById('gameArea');
+  const stars = wrongState.wrongScore>=WRONG_PER?3 : wrongState.wrongScore>=Math.ceil(WRONG_PER/2)?2 : wrongState.wrongScore>0?1:0;
+  award(stars);
+  area.innerHTML=`<div class="result-panel"><div class="big">${wrongState.wrongScore}/${WRONG_PER}</div>
+    <div class="result-msg">${t("أجبت غلط عمداً أحسنت!","You answered wrong on purpose, well done!")}</div>
+    <div class="small-stars">${starsStr(stars)}</div>
+    <button class="btn mt" onclick="initWrong()">${t("العب مجدداً","Play again")}</button></div>`;
+}
+
+/* ============ الجاسوس (Spy) — تنافل الجوال ============ */
+const SPY_WORDS=[
+ ["مطعم","مقهى"],["شاطئ","حمام سباحة"],["مستشفى","عيادة"],["سوبرماركت","متجر ملابس"],
+ ["مدرسة","جامعة"],["طائرة","قطار"],["مطار","محطة قطار"],["شجرة","نبتة"],
+ ["قطة","كلب"],["كتاب","مجلة"],["قمر","شمس"],["بحر","بحيرة"],
+ ["جبل","تل"],["حديقة","غابة"],["سيارة","دراجة"],["سهل","صحراء"],
+ ["ساعة","سوار"],["فنجان","كوب"],["نظارة","منظار"],["قلم","فرشاة"],
+ ["تمثال","متحف"],["جسر","نفق"],["فندق","استراحة"],["مسبح","نافورة"],
+];
+let spyState={};
+function initSpy(){
+  spyState={phase:'setup'};
+  const area=document.getElementById('gameArea');
+  let players='';
+  for(let i=1;i<=8;i++){
+    players+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <span style="width:26px;height:26px;border-radius:50%;background:${i<=3?'#4f6ef7':'#333a'};color:#fff;display:flex;align-items:center;justify-content:center;font-size:.8rem">${i}</span>
+      <input id="spyP${i}" value="لاعب ${i}" style="flex:1;padding:9px;border-radius:10px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;font-size:.9rem">
+    </div>`;
+  }
+  area.innerHTML=`<div class="q-area" style="max-width:420px;margin:0 auto">
+    <h3>🕵️ ${t("لعبة الجاسوس","Spy game")}</h3>
+    <p style="color:var(--sub);font-size:.9rem">${t("العبوا مع بعض (3-8 أشخاص). جاسوس واحد بينكم، والبقية يعرفون الكلمة. مرّروا الجوال واكشفوا من الجاسوس!","Play together (3-8). One spy among you, the rest know the word. Pass the phone to find the spy!")}</p>
+    <div style="font-size:.9rem;font-weight:800;color:var(--sub);margin:10px 0 8px">${t("عدد اللاعبين","Players count")}: <b id="spyCount">3</b></div>
+    <input type="range" id="spyNum" min="3" max="8" value="3" style="width:100%" oninput="spyCountSet(this.value)">
+    <div id="spyPlayers" style="margin-top:12px"></div>
+    <button class="btn blue mt" onclick="spyStart()">${t("ابدأ اللعبة","Start game")}</button>
+  </div>`;
+  spyCountSet(3);
+}
+function spyCountSet(n){
+  document.getElementById('spyCount').textContent=n;
+  spyState.n=parseInt(n);
+  const box=document.getElementById('spyPlayers');
+  box.innerHTML='';
+  for(let i=1;i<=n;i++){
+    const d=document.createElement('div');
+    d.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:8px';
+    d.innerHTML=`<span style="width:26px;height:26px;border-radius:50%;background:#4f6ef7;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.8rem">${i}</span>
+      <input id="spyP${i}" value="لاعب ${i}" style="flex:1;padding:9px;border-radius:10px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;font-size:.9rem">`;
+    box.appendChild(d);
+  }
+}
+function spyStart(){
+  const n=spyState.n;
+  const names=[];
+  for(let i=1;i<=n;i++){ const v=document.getElementById('spyP'+i); names.push(v?v.value.trim()||('لاعب '+i):('لاعب '+i)); }
+  const pair=SPY_WORDS[Math.floor(Math.random()*SPY_WORDS.length)];
+  const spyIdx=Math.floor(Math.random()*n);
+  spyState={phase:'reveal',n,names,pair,spyIdx,revealIdx:0,revealLeft:30,votes:{},revealTimer:null,voteTimer:null};
+  spyReveal();
+}
+function spyReveal(){
+  const s=spyState;
+  if(s.revealIdx>=s.n){ spyDiscuss(); return; }
+  const i=s.revealIdx;
+  const isSpy = i===s.spyIdx;
+  const word = isSpy ? s.pair[1] : s.pair[0];
+  const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="q-area" style="max-width:400px;margin:0 auto;text-align:center">
+    <div class="timer" id="spyRvT"><span id="spyRvN">${s.revealLeft}</span> ⏱️</div>
+    <div style="font-size:1rem;color:var(--sub);margin:10px 0">${t("دور اللاعب","Player")} <b>${s.names[i]}</b></div>
+    <div style="margin:20px 0">
+      <button onclick="spyShow()" class="btn blue" style="padding:14px 28px;font-size:1.1rem" id="spyShowBtn">${t("أظهر كلمتك 👁","Show your word 👁")}</button>
+    </div>
+    <div id="spyHidden" style="display:none">
+      <div style="font-size:.9rem;color:var(--sub);margin-bottom:6px">${t("كلمتك (لا تطلعها لأحد!)","Your word (don't show it!)")}</div>
+      <div style="font-size:2.2rem;font-weight:900;color:${isSpy?'#e53935':'var(--neon)'}">${isSpy?'🕵️':word}</div>
+      <div style="font-size:1rem;margin-top:6px;color:var(--sub)">${isSpy?t('أنت الجاسوس!','You are the spy!'):word}</div>
+      <button onclick="spyNext()" class="btn pink mt">${t("التالي ←","Next →")}</button>
+    </div>
+  </div>`;
+  if(s.revealTimer) clearInterval(s.revealTimer);
+  s.revealTimer=setInterval(()=>{
+    s.revealLeft--;
+    const e=document.getElementById('spyRvN'); if(e)e.textContent=s.revealLeft;
+    const tEl=document.getElementById('spyRvT'); if(tEl)tEl.style.color = s.revealLeft<=5 ? '#e53935':'';
+    if(s.revealLeft<=0){ clearInterval(s.revealTimer); s.revealTimer=null; spyNext(); }
+  },1000);
+}
+function spyShow(){
+  document.getElementById('spyShowBtn').style.display='none';
+  document.getElementById('spyHidden').style.display='block';
+}
+function spyNext(){
+  const s=spyState;
+  if(s.revealTimer){ clearInterval(s.revealTimer); s.revealTimer=null; }
+  s.revealIdx++;
+  if(s.revealIdx>=s.n){ spyDiscuss(); } else spyReveal();
+}
+function spyDiscuss(){
+  const s=spyState;
+  if(s.voteTimer) clearInterval(s.voteTimer);
+  s.phase='vote';
+  s.voteLeft=120;
+  const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="q-area" style="max-width:420px;margin:0 auto">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3>🗳 ${t("من هو الجاسوس؟","Who is the spy?")}</h3>
+      <div class="timer" id="spyVT"><span id="spyVN">${s.voteLeft}</span> ⏱️</div>
+    </div>
+    <p style="color:var(--sub);font-size:.9rem">${t("ناقشوا ثم صوتّوا: اضغط على اسم الجاسوس الذي تظنونه. كل من يستطيع أن يصوّت بالضغط على المشتبه به.","Discuss, then vote: tap who you think the spy is. Anyone may tap a suspect.")}</p>
+    <div id="spyVotes" style="margin-top:10px"></div>
+    <button class="btn pink mt" onclick="spyRevealResult()">${t("إظهار النتيجة","Reveal result")}</button>
+  </div>`;
+  spyRenderVotes();
+  s.voteTimer=setInterval(()=>{
+    s.voteLeft--;
+    const e=document.getElementById('spyVN'); if(e)e.textContent=s.voteLeft;
+    const tEl=document.getElementById('spyVT'); if(tEl)tEl.style.color = s.voteLeft<=10 ? '#e53935':'';
+    if(s.voteLeft<=0){ clearInterval(s.voteTimer); s.voteTimer=null; spyRevealResult(); }
+  },1000);
+}
+function spyRenderVotes(){
+  const s=spyState;
+  const box=document.getElementById('spyVotes');
+  if(!box) return;
+  const maxVotes=Math.max(1,...Object.values(s.votes));
+  box.innerHTML=s.names.map((nm,i)=>{
+    const v=s.votes[i]||0;
+    const w=(v/maxVotes)*100;
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer" onclick="spyVote(${i})">
+      <button style="padding:9px 12px;border-radius:10px;border:1px solid #ffffff33;background:${i===s.spyIdx?'#e5393533':'#ffffff10'};color:#fff;font-weight:800;flex:1;text-align:right">${i===s.spyIdx?'🕵️ ':''}${nm}</button>
+      <div style="width:60px;background:#ffffff15;border-radius:6px;overflow:hidden;height:14px"><div style="width:${w}%;height:100%;background:#f59e0b"></div></div>
+      <span style="font-size:.9rem;color:var(--gold);width:20px">${v}</span>
+    </div>`;
+  }).join('');
+}
+function spyVote(idx){
+  spyState.votes[idx]=(spyState.votes[idx]||0)+1;
+  spyRenderVotes();
+  toast((spyState.names[idx])+' +1');
+}
+function spyRevealResult(){
+  const s=spyState;
+  if(s.voteTimer){ clearInterval(s.voteTimer); s.voteTimer=null; }
+  const spyName=s.names[s.spyIdx];
+  const caught=s.votes[s.spyIdx]>0;
+  const most=Object.entries(s.votes).sort((a,b)=>b[1]-a[1]); // most voted
+  const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="q-area" style="max-width:420px;margin:0 auto;text-align:center">
+    <h3>🔎 ${t("النتيجة","The result")}</h3>
+    <div style="font-size:1.1rem;margin:14px 0">
+      <div style="color:var(--sub);font-size:.9rem">${t("الجاسوس","The spy")}</div>
+      <div style="font-size:1.6rem;font-weight:900;color:#e53935">🕵️ ${spyName}</div>
+      <div style="margin-top:6px;color:var(--sub);font-size:.9rem">${t("الكلمة الحقيقية","The real word")} → <b style="color:var(--neon)">${s.pair[0]}</b></div>
+      <div style="color:var(--sub);font-size:.9rem">${t("كلمة الجاسوس","Spy's word")} → <b style="color:#e53935">${s.pair[1]}</b></div>
+    </div>
+    <div style="font-size:1.2rem;font-weight:900;color:${caught?'#22c55e':'#e53935'}">${caught?t('🎉 انكشف الجاسوس!','🎉 The spy was caught!'):t('😱 الجاسوس هرب بلا تصويت ضده!','😱 The spy escaped unpinned!')}</div>
+    <button class="btn blue mt" onclick="initSpy()">${t("جولة جديدة","New round")}</button>
+    <button class="btn mt" style="background:var(--card)" onclick="goHome()">${t("القائمة الرئيسية","Home")}</button>
+  </div>`;
 }
 
 /* ============ INIT ============ */

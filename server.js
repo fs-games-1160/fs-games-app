@@ -161,6 +161,16 @@ app.post('/api/friends/respond', auth, (req, res) => {
   res.json({ ok: true });
 });
 
+app.post('/api/friends/remove', auth, (req, res) => {
+  const { friendId } = req.body || {};
+  if (!friendId) return res.status(400).json({ error: 'bad-request' });
+
+  db.prepare('DELETE FROM friends WHERE user_id = ? AND friend_id = ?').run(req.userId, friendId);
+  db.prepare('DELETE FROM friends WHERE user_id = ? AND friend_id = ?').run(friendId, req.userId);
+
+  res.json({ ok: true });
+});
+
 function loadFriends(userId) {
   const rows = db.prepare(
     `SELECT f.friend_id, f.status, u.username, u.gender, u.avatar_color, u.is_guest,
