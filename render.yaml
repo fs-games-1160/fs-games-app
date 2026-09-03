@@ -9,9 +9,3 @@ services:
     envVars:
       - key: JWT_SECRET
         value: fs-games-2026-secret-key-fkw1160-replace-in-prod
-      - key: DB_PATH
-        value: /data/fsgames.db
-    disk:
-      name: fsgames-data
-      mountPath: /data
-      sizeGB: 1
