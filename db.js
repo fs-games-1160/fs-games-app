@@ -1,11 +1,13 @@
 const path = require('path');
 const fs = require('fs');
 const { DatabaseSync } = require('node:sqlite');
+const { restore } = require('./backup');
 
 const dataDir = path.join(__dirname, 'data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
 const dbPath = process.env.DB_PATH || path.join(dataDir, 'fsgames.db');
+restore(dbPath);
 const db = new DatabaseSync(dbPath);
 
 db.exec(`
@@ -39,4 +41,4 @@ CREATE TABLE IF NOT EXISTS scores (
 );
 `);
 
-module.exports = { db };
+module.exports = { db, dbPath };

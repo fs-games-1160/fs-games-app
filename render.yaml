@@ -9,3 +9,7 @@ services:
     envVars:
       - key: JWT_SECRET
         value: fs-games-2026-secret-key-fkw1160-replace-in-prod
+      - key: GIT_DATA_REPO
+        value: fs-games-1160/fs-games-data
+      - key: GIT_DATA_TOKEN
+        sync: false

@@ -3,7 +3,8 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-const { db } = require('./db');
+const { db, dbPath } = require('./db');
+const { backup } = require('./backup');
 const path = require('path');
 
 const app = express();
@@ -197,4 +198,8 @@ app.get('/api/users/search', auth, (req, res) => {
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
-app.listen(PORT, () => console.log('F&S Games server running on port ' + PORT));
+app.listen(PORT, () => {
+  console.log('F&S Games server running on port ' + PORT);
+  // persist DB to GitHub backup every 45 seconds (best-effort)
+  setInterval(() => backup(dbPath), 45000);
+});
