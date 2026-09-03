@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>العاب F&S | F&S Games</title>
+<meta name="theme-color" content="#0f0c29">
+<meta name="description" content="عشرات الألعاب في تطبيق واحد — العاب F&S">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="العاب F&S">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -2195,29 +2203,60 @@ function rcPick(c){
 let _hl=null;
 function initHighLow(){
   const area=document.getElementById('gameArea');
-  _hl={cur:Math.floor(Math.random()*90)+10,score:0};
-  area.innerHTML=`<div class="q-area" style="max-width:380px;margin:0 auto;text-align:center">
+  _hl={cur:Math.floor(Math.random()*90)+10,score:0,bot:0,round:1,total:10,last:null};
+  area.innerHTML=`<div class="q-area" style="max-width:400px;margin:0 auto;text-align:center">
     <h3>📈 ${t("أعلى أم أقل","Higher or Lower")}</h3>
-    <p style="color:var(--sub);font-size:.9rem">${t("خمن هل الرقم القادم أعلى أم أقل","Guess if the next number is higher or lower")}</p>
-    <div style="font-size:3rem;font-weight:900;color:var(--neon);margin:14px 0" id="hlCur">${_hl.cur}</div>
+    <p style="color:var(--sub);font-size:.9rem">${t("نافس الروبوت! خمن أعلى أو أقل على 10 جولات","Compete vs the bot! Guess higher/lower for 10 rounds")}</p>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:6px 0;color:var(--sub);font-size:.9rem">
+      <span>🤖 <b id="hlBot">0</b></span>
+      <span style="color:var(--gold);font-weight:800" id="hlR">${t("الجولة","Round")} 1/10</span>
+      <span><b id="hlScore">0</b> ${t("أنت","you")}</span>
+    </div>
+    <div style="font-size:3rem;font-weight:900;color:var(--neon);margin:12px 0" id="hlCur">${_hl.cur}</div>
     <div style="display:flex;gap:12px">
       <button class="btn" style="flex:1;background:#16a34a;padding:14px" onclick="hlPick(true)">▲ ${t("أعلى","Higher")}</button>
       <button class="btn" style="flex:1;background:#dc2626;padding:14px" onclick="hlPick(false)">▼ ${t("أقل","Lower")}</button>
     </div>
-    <div style="font-size:1.6rem;font-weight:900;color:var(--gold);margin-top:14px" id="hlScore">${_hl.score}</div>
-    <button class="btn blue mt" style="width:100%" onclick="initHighLow()">${t("إعادة","Retry")}</button>
+    <div style="font-size:1.1rem;font-weight:800;min-height:30px;margin-top:8px" id="hlMsg"></div>
+    <button class="btn blue mt" style="width:100%" onclick="initHighLow()">${t("لعبة جديدة (10 جولات)","New game (10 rounds)")}</button>
   </div>`;
 }
 function hlPick(higher){
+  if(_hl.round>_hl.total)return;
+  // player guess
   const next=Math.floor(Math.random()*90)+10;
-  const m=document.getElementById('hlScore');
-  const cur=_hl.cur;
-  const isH=next>cur,isL=next<cur;
-  const win=(higher&&isH)||(!higher&&isL);
-  if(win){_hl.score++;m.textContent=_hl.score+' — '+next;m.style.color='#22c55e';}
-  else{m.textContent=t("خسرت!","Lost!")+' '+next;m.style.color='#ef4444';_hl.score=0;setTimeout(()=>{m.textContent='0';m.style.color='var(--gold)';},1200);}
+  const msg=document.getElementById('hlMsg');
+  const pWin=(higher&&next>_hl.cur)||(!higher&&next<_hl.cur);
+  if(pWin){_hl.score++;msg.innerHTML='✅ '+t("أصبت!","Correct!")+' '+next;msg.style.color='#22c55e';}
+  else{msg.innerHTML='❌ '+t("أخطأت","Wrong")+' '+next;msg.style.color='#ef4444';}
+  // bot guess: strategic with skill/randomness
+  const botHigher=(50+Math.floor(Math.random()*30))/100>0.5;
+  const bWin=(botHigher&&next>_hl.cur)||(!botHigher&&next<_hl.cur);
+  if(bWin)_hl.bot++;
   _hl.cur=next;
-  const curEl=document.getElementById('hlCur');if(curEl)curEl.textContent=next;
+  document.getElementById('hlCur').textContent=next;
+  document.getElementById('hlScore').textContent=_hl.score;
+  document.getElementById('hlBot').textContent=_hl.bot;
+  document.getElementById('hlR').textContent=t("الجولة","Round")+' '+_hl.round+'/'+_hl.total;
+  setTimeout(()=>{
+    if(_hl.round===_hl.total){
+      finishHL();
+    }else{
+      _hl.round++;
+      document.getElementById('hlR').textContent=t("الجولة","Round")+' '+_hl.round+'/'+_hl.total;
+      msg.textContent='';
+    }
+  },600);
+}
+function finishHL(){
+  const m=document.getElementById('hlMsg');
+  const you=_hl.score,bot=_hl.bot;
+  let res;
+  if(you>bot)res='🏆 '+t("فزت على الروبوت!","You beat the bot!")+' '+you+' : '+bot;
+  else if(bot>you)res='🤖 '+t("الروبوت فاز!","The bot won!")+' '+bot+' : '+you;
+  else res='🤝 '+t("تعادل!","It's a tie!")+' '+you+' : '+bot;
+  m.innerHTML=res;m.style.color='var(--gold)';m.style.fontSize='1.2rem';
+  _hl.round=_hl.total+1;
 }
 /* ================== فيبوناتشي ================== */
 let _fib=null;
@@ -2977,6 +3016,12 @@ window.addEventListener('load', async ()=>{
   // show auth
   switchAuth('login'); pickGender('male');
 });
+/* ---- PWA service worker ---- */
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('/sw.js').catch(function(){});
+  });
+}
 </script>
 </body>
 </html>
