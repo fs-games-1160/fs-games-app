@@ -13,3 +13,5 @@ services:
         value: fs-games-1160/fs-games-data
       - key: GIT_DATA_TOKEN
         sync: false
+      - key: ADMIN_PIN
+        value: "4499"

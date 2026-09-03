@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة الإدارة - F&S Games</title>
+<style>
+  * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+  body { margin: 0; background: #0f1222; color: #eef; min-height: 100vh; padding: 24px; }
+  h1 { font-size: 22px; margin: 0 0 8px; }
+  .sub { opacity: .7; font-size: 13px; margin-bottom: 20px; }
+  input { padding: 10px 14px; border-radius: 8px; border: 1px solid #2c3350; background: #1a1f38; color: #eef; font-size: 15px; }
+  .btn { background: #4f6ef7; color: #fff; border: 0; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: 600; }
+  .btn:hover { background: #3d5aee; }
+  #loginBox { max-width: 340px; margin: 60px auto; background: #171c33; padding: 28px; border-radius: 14px; text-align: center; }
+  #loginBox input { width: 100%; margin-bottom: 14px; text-align: center; }
+  .err { color: #ff6b81; font-size: 13px; min-height: 18px; margin-bottom: 8px; }
+  table { width: 100%; border-collapse: collapse; background: #171c33; border-radius: 12px; overflow: hidden; margin-top: 16px; }
+  th, td { padding: 10px 12px; text-align: right; border-bottom: 1px solid #232a49; font-size: 13px; }
+  th { background: #1f2542; font-size: 12px; opacity: .9; }
+  .guest { color: #ffb86c; } .real { color: #7ee787; }
+  .count { background: #2a3152; padding: 3px 10px; border-radius: 20px; font-size: 12px; }
+  .avatar { display:inline-block; width: 26px; height:26px; border-radius:50%; vertical-align:middle; margin-left:8px; }
+</style>
+</head>
+<body>
+  <div id="loginBox">
+    <h1>🔐 لوحة الإدارة</h1>
+    <div class="sub">أدخل الرمز السري للوصول</div>
+    <div class="err" id="err"></div>
+    <input type="password" id="pin" placeholder="الرمز السري" autofocus>
+    <div><button class="btn" onclick="enter()">دخول</button></div>
+  </div>
+
+  <div id="panel" style="display:none">
+    <h1>📋 كل الحسابات المسجلة</h1>
+    <div class="sub">عدد المستخدمين: <span class="count" id="count">0</span></div>
+    <div style="margin-top:12px">
+      <input id="search" placeholder="بحث بالاسم..." style="width:220px" oninput="render()">
+    </div>
+    <table>
+      <thead>
+        <tr><th>ID</th><th>المستخدم</th><th>النوع</th><th>الجنس</th><th>النقاط</th><th>الألعاب</th><th>تاريخ التسجيل</th></tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+<script>
+let allUsers = [];
+
+function enter() {
+  const pin = document.getElementById('pin').value.trim();
+  document.getElementById('err').textContent = '';
+  fetch('/api/users/all', { headers: { 'x-admin-pin': pin } })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) { document.getElementById('err').textContent = 'رمز غير صحيح'; return; }
+      allUsers = data.users;
+      document.getElementById('loginBox').style.display = 'none';
+      document.getElementById('panel').style.display = 'block';
+      render();
+    })
+    .catch(() => document.getElementById('err').textContent = 'خطأ بالاتصال');
+}
+
+function render() {
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const list = allUsers.filter(u => u.username.toLowerCase().includes(q));
+  document.getElementById('count').textContent = list.length;
+  document.getElementById('tbody').innerHTML = list.map(u => {
+    const g = u.gender === 'female' ? 'أنثى 👧' : 'ذكر 👦';
+    return `<tr>
+      <td>${u.id}</td>
+      <td><span class="avatar" style="background:${u.avatar_color || '#4f6ef7'}"></span>${u.username}</td>
+      <td class="${u.is_guest ? 'guest' : 'real'}">${u.is_guest ? 'ضيف' : 'حساب'}</td>
+      <td>${g}</td>
+      <td>${u.total_score || 0}</td>
+      <td>${u.games_won || 0}</td>
+      <td>${(u.created_at || '').replace('T', ' ')}</td>
+    </tr>`;
+  }).join('');
+}
+
+document.getElementById('pin').addEventListener('keydown', e => { if (e.key === 'Enter') enter(); });
+</script>
+</body>
+</html>

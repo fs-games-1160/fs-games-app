@@ -196,6 +196,26 @@ app.get('/api/users/search', auth, (req, res) => {
   res.json({ results: rows.map(publicUser) });
 });
 
+// ============ ADMIN ============
+
+const ADMIN_PIN = process.env.ADMIN_PIN || '0000';
+
+// list all registered users (admin only)
+app.get('/api/users/all', (req, res) => {
+  const pin = req.headers['x-admin-pin'];
+  if (pin !== ADMIN_PIN) return res.status(401).json({ error: 'bad-admin-pin' });
+  const users = db.prepare(
+    `SELECT u.id, u.username, u.email, u.gender, u.is_guest, u.avatar_color, u.created_at,
+            COALESCE(s.total_score,0) AS total_score, COALESCE(s.games_won,0) AS games_won
+     FROM users u
+     LEFT JOIN scores s ON s.user_id = u.id
+     ORDER BY u.id`
+  ).all();
+  res.json({ users });
+});
+
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 app.listen(PORT, () => {
