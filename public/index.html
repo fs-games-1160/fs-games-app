@@ -267,12 +267,11 @@ label{display:block;margin:10px auto;max-width:300px;color:var(--sub);font-size:
 <div id="spyOnlineScreen" style="position:fixed;inset:0;z-index:920;display:none;align-items:center;justify-content:center;background:#000000cc;padding:16px">
   <div style="background:#1b1b3a;border:1px solid #ffffff30;border-radius:24px;padding:22px;width:100%;max-width:420px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px #00000088">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <div style="font-size:1.3rem;font-weight:900;color:var(--gold)">🕵️ <span class="lang-ar">الجاسوس أونلاين</span><span class="lang-en">Spy Online</span></div>
+      <div style="font-size:1.3rem;font-weight:900;color:var(--gold)"><span id="soGameIcon">🕵️</span> <span id="soGameTitle">Spy Online</span></div>
       <button onclick="closeSpyOnline()" style="background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer">✕</button>
     </div>
     <div id="soHome">
-      <p style="color:var(--sub);font-size:.9rem" class="lang-ar">أنشئ غرفة وشارك الكود مع أصدقائك (3-8 أشخاص)</p>
-      <p style="color:var(--sub);font-size:.9rem" class="lang-en">Create a room and share the code (3-8 players)</p>
+      <p id="soHint" style="color:var(--sub);font-size:.9rem"></p>
       <input id="soName" placeholder="اسمك / Your name" style="width:100%;padding:11px;border-radius:12px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;font-size:.9rem;margin-bottom:10px;box-sizing:border-box">
       <button onclick="soCreate()" class="btn blue" style="width:100%;padding:13px;font-size:1rem;margin-bottom:14px">✨ <span class="lang-ar">إنشاء غرفة جديدة</span><span class="lang-en">Create new room</span></button>
       <div style="display:flex;gap:8px;align-items:center">
@@ -347,7 +346,7 @@ try{
 function playOk(){ try{ sfxOk.play(); }catch(e){} }
 
 /* ============ STATE ============ */
-const totalGames=12;
+const totalGames=13;
 let gameStars = JSON.parse(localStorage.getItem('fgames')||'{}');
 let deduction = parseInt(localStorage.getItem('fded')||'0');
 let currentGame=0;
@@ -373,6 +372,7 @@ const BGS = {
   "slots":{"icon":"🌍","name":"GuessCountry","ti":"خمن الدولة","d":{"ar":"خمن الدولة من العلم (الرموز)","en":"Guess the country (from clues)"}},
   "wrong":{"icon":"🚫","name":"AnswerWrong","ti":"جاوب غلط","d":{"ar":"أجب عمداً بالإجابة الخاطئة","en":"Answer all questions wrong on purpose"}},
   "spy":  {"icon":"🕵️","name":"Spy","ti":"الجاسوس","d":{"ar":"جاسوس بينكم (3-8 لاعبين) اكشفوه","en":"A spy among you (3-8 players) find him"}},
+  "race": {"icon":"🏎️","name":"KnowledgeRace","ti":"سباق المعرفة","d":{"ar":"تنافسوا أونلاين — أول من يجيب صح يحصد النقطة","en":"Compete online — first correct answer scores"}},
 };
 const GAMES = [
   {id:"mem", un:"ARABIC"},
@@ -387,6 +387,7 @@ const GAMES = [
   {id:"slots", un:null},
   {id:"wrong", un:null},
   {id:"spy", un:null},
+  {id:"race", un:null},
 ];
 const QUIZ_TOPICS = ["general","geo","science","history","animals"];
 
@@ -441,6 +442,7 @@ function startGame(i){
     case 'slots': initSlots();break;
     case 'wrong': initWrong();break;
     case 'spy': initSpy();break;
+    case 'race': initRace();break;
   }
 }
 function award(stars){
@@ -1578,6 +1580,16 @@ function initSpy(){
     </div>
   </div>`;
 }
+function initRace(){
+  const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="q-area" style="max-width:420px;margin:0 auto;text-align:center">
+    <h3>🏎️ ${t("سباق المعرفة","Knowledge Race")}</h3>
+    <p style="color:var(--sub);font-size:.9rem">${t("تنافسوا أونلاين — أول من يجيب صح يحصد النقطة.","Compete online — first correct answer scores the point.")}</p>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">
+      <button onclick="openRace()" class="btn blue" style="padding:14px">🌐 ${t("العب أونلاين (كود غرفة)","Play online (room code)")}</button>
+    </div>
+  </div>`;
+}
 function initSpyLocal(){
   spyState={phase:'setup'};
   const area=document.getElementById('gameArea');
@@ -1724,8 +1736,22 @@ function spyRevealResult(){
 
 /* ============ الجاسوس أونلاين (WebSocket) ============ */
 let soWs=null;
-let soState={code:null,id:null,players:[],phase:'lobby',myVote:undefined};
+let soState={code:null,id:null,players:[],phase:'lobby',myVote:undefined,game:'spy'};
 function openSpyOnline(){
+  openMulti('spy');
+}
+function openRace(){
+  openMulti('race');
+}
+function openMulti(game){
+  soState={code:null,id:null,players:[],phase:'lobby',myVote:undefined,game};
+  document.getElementById('soGameIcon').textContent = game==='race' ? '🏎️' : '🕵️';
+  document.getElementById('soGameTitle').innerHTML = game==='race'
+    ? '<span class="lang-ar">سباق المعرفة أونلاين</span><span class="lang-en">Knowledge Race Online</span>'
+    : '<span class="lang-ar">الجاسوس أونلاين</span><span class="lang-en">Spy Online</span>';
+  document.getElementById('soHint').innerHTML = game==='race'
+    ? '<span class="lang-ar">تنافسوا — أول من يجيب صح يحصد النقطة! (3-8 أشخاص)</span><span class="lang-en">Race — first correct answer scores! (3-8 players)</span>'
+    : '<span class="lang-ar">أنشئ غرفة وشارك الكود مع أصدقائك (3-8 أشخاص)</span><span class="lang-en">Create a room and share the code (3-8 players)</span>';
   document.getElementById('soHome').style.display='block';
   document.getElementById('soLobby').style.display='none';
   document.getElementById('soGame').style.display='none';
@@ -1758,7 +1784,7 @@ function soName(){ const v=document.getElementById('soName').value.trim(); retur
 function soCreate(){
   soErrClear();
   const name=soName();
-  soConnect(()=>{ soWs.send(JSON.stringify({type:'create',name})); });
+  soConnect(()=>{ soWs.send(JSON.stringify({type:'create',game:soState.game,name})); });
 }
 function soJoin(){
   soErrClear();
@@ -1785,6 +1811,7 @@ function soHandle(msg){
   }
   if(msg.type==='joined'){
     soState.code=msg.code; soState.id=msg.youId;
+    if(msg.game) soState.game=msg.game;
     document.getElementById('soCode').textContent=msg.code;
     document.getElementById('soHome').style.display='none';
     document.getElementById('soLobby').style.display='block';
@@ -1796,6 +1823,28 @@ function soHandle(msg){
   if(msg.type==='room'){
     if(soState.phase==='game') return; // already playing, ignore board room pings
     soRenderLobby(msg);
+    return;
+  }
+  /* ---- Knowledge Race handlers ---- */
+  if(msg.type==='raceQ'){
+    soState.phase='game';
+    soRenderRaceQ(msg);
+    return;
+  }
+  if(msg.type==='raceAnswer'){
+    soRaceFeedback(msg);
+    return;
+  }
+  if(msg.type==='raceScored'){
+    soState.raceScores=msg.scores;
+    return;
+  }
+  if(msg.type==='raceReveal'){
+    soRenderRaceReveal(msg);
+    return;
+  }
+  if(msg.type==='raceFinal'){
+    soRenderRaceFinal(msg);
     return;
   }
   if(msg.type==='reveal'){
@@ -1837,6 +1886,97 @@ function soRenderLobby(msg){
   const sBtn=document.getElementById('soStartBtn');
   if(soState.id===0){ sBtn.style.display='block'; sBtn.disabled = soState.players.length<3; }
   else sBtn.style.display='none';
+}
+
+/* ---- Knowledge Race (أونلاين) ---- */
+function soScoreRankHTML(scores){
+  if(!scores) return '';
+  return Object.keys(scores).map(pid=>{
+    const pidN=Number(pid);
+    const p=soState.players.find(x=>x.id===pidN);
+    const nm=p?p.name:('#'+(pidN+1));
+    return `<div style="display:flex;justify-content:space-between;align-items:center;font-size:.85rem;padding:4px 0">
+      <span>${nm}</span><b style="color:var(--gold)">${scores[pid]}⭐</b></div>`;
+  }).join('');
+}
+function soRenderRaceQ(msg){
+  document.getElementById('soHome').style.display='none';
+  document.getElementById('soLobby').style.display='none';
+  const g=document.getElementById('soGame');
+  g.style.display='block';
+  soState.raceScores=msg.scores;
+  soState.raceRound={round:msg.round,total:msg.total,endsAt:msg.endsAt,opts:msg.opts};
+  g.innerHTML=`<div style="text-align:center">
+    <h3>🏎️ ${t('سباق المعرفة','Knowledge Race')}</h3>
+    <div style="color:var(--gold);font-weight:800;margin:6px 0" id="soRaceNum">${t('سؤال','Q')} ${msg.round}/${msg.total}</div>
+    <div style="color:var(--gold);font-weight:800;margin:6px 0" id="soRaceTimer"></div>
+    <div style="font-size:1.15rem;font-weight:800;margin:12px 0 14px">${msg.text}</div>
+    <div id="soRaceOpts"></div>
+    <div id="soRaceMsg" style="min-height:24px;margin-top:10px"></div>
+    <div style="border-top:1px solid #ffffff22;margin-top:12px;padding-top:10px;text-align:right">
+      <div style="font-size:.85rem;color:var(--sub);margin-bottom:4px">${t('النقاط','Scores')}</div>
+      <div id="soRaceScore">${soScoreRankHTML(soState.raceScores)}</div>
+    </div>
+  </div>`;
+  soRaceBuildOpts();
+  if(soState._raceT) clearInterval(soState._raceT);
+  soRaceTick();
+  soState._raceT=setInterval(soRaceTick,250);
+}
+function soRaceBuildOpts(){
+  const box=document.getElementById('soRaceOpts');
+  if(!box) return;
+  box.innerHTML=soState.raceRound.opts.map(o=>
+    `<button onclick="soRaceAns(${o.idx})" class="opt" style="width:100%;margin-bottom:8px">${o.text}</button>`
+  ).join('');
+}
+function soRaceTick(){
+  const left=Math.max(0,Math.ceil((soState.raceRound.endsAt-Date.now())/1000));
+  const e=document.getElementById('soRaceTimer');
+  if(e) e.textContent=left+'s';
+  if(left<=0){ if(soState._raceT) clearInterval(soState._raceT); }
+}
+function soRaceAns(idx){
+  if(!soWs) return;
+  if(soState.raceAnswered) return;
+  soState.raceAnswered=true;
+  soWs.send(JSON.stringify({type:'raceAns',idx}));
+  document.querySelectorAll('#soRaceOpts .opt').forEach(b=>b.disabled=true);
+}
+function soRaceFeedback(msg){
+  const e=document.getElementById('soRaceMsg');
+  if(e) e.textContent = msg.correct ? '✅ '+t('صح!','Correct!') : '❌ '+t('خطأ','Wrong');
+  if(e) e.style.color = msg.correct ? '#22c55e' : '#ef4444';
+}
+function soRenderRaceReveal(msg){
+  if(soState._raceT) clearInterval(soState._raceT);
+  soState.raceScores=msg.scores;
+  const correctOpt=(soState.raceRound&&soState.raceRound.opts||[]).find(o=>o.idx===msg.correct);
+  const correctText=correctOpt?correctOpt.text:('#'+msg.correct);
+  const g=document.getElementById('soGame');
+  g.innerHTML=`<div style="text-align:center">
+    <h3>🏁 ${t('أظهر السؤال','Reveal')}</h3>
+    <div style="color:var(--gold);font-weight:800;margin:6px 0">${t('سؤال','Q')} ${msg.round}</div>
+    <div style="font-size:1.6rem;font-weight:900;color:var(--neon);margin:14px 0">✅ ${correctText}</div>
+    <div style="font-size:.9rem;color:var(--sub)">${t('الجواب الصحيح','Correct answer')}</div>
+    <div style="border-top:1px solid #ffffff22;margin-top:14px;padding-top:10px;text-align:right">
+      <div style="font-size:.85rem;color:var(--sub);margin-bottom:4px">${t('النقاط','Scores')}</div>
+      <div id="soRaceScore2">${soScoreRankHTML(msg.scores)}</div>
+    </div>
+  </div>`;
+}
+function soRenderRaceFinal(msg){
+  if(soState._raceT) clearInterval(soState._raceT);
+  const g=document.getElementById('soGame');
+  const winner=msg.ranked[0];
+  const rk=msg.ranked.map((r,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;margin-bottom:7px;background:#ffffff0e;border:1px solid #ffffff22;border-radius:10px">
+    <span>${i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'. '} ${r.name}</span><b style="color:var(--gold)">${r.score}⭐</b></div>`).join('');
+  g.innerHTML=`<div style="text-align:center">
+    <h3>🏁 ${t('انتهى السباق!','The race is over!')}</h3>
+    ${winner?`<div style="font-size:1.5rem;font-weight:900;color:var(--gold);margin:12px 0">🏆 ${winner.name} — ${winner.score}⭐</div>`:''}
+    <div style="margin:14px 0;text-align:left">${rk}</div>
+    <button class="btn blue" style="width:100%;padding:13px" onclick="openRace()">${t('سباق جديد','New race')}</button>
+  </div>`;
 }
 
 function soRenderReveal(msg){

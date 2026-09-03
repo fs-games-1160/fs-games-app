@@ -39,6 +39,7 @@ function roomPayload(room, excludeId) {
   return {
     type: 'room',
     code: room.code,
+    game: room.game || 'spy',
     phase: room.phase,
     count: room.players.length,
     max: 8,
@@ -111,18 +112,113 @@ function finishRound(room) {
   }, 300000);
 }
 
+/* ================= Knowledge Race (أونلاين) ================= */
+const RACE_QUESTIONS = [
+  {q:"كم عدد أيام الأسبوع؟",a:["5","6","7","8"],c:2},
+  {q:"ما هي أكبر قارة في العالم؟",a:["أفريقيا","آسيا","أوروبا","أمريكا"],c:1},
+  {q:"كم عدد ألوان قوس قزح؟",a:["5","6","7","8"],c:2},
+  {q:"ما هي عاصمة السعودية؟",a:["جدة","الرياض","مكة","الدمام"],c:1},
+  {q:"كم عدد أرجل العنكبوت؟",a:["6","8","10","4"],c:1},
+  {q:"ما هو أكبر محيط في العالم؟",a:["الأطلسي","الهادي","الهندي","المتجمد"],c:1},
+  {q:"كم عدد ساعات اليوم؟",a:["12","20","24","30"],c:2},
+  {q:"كم عدد أصابع اليد الواحدة؟",a:["3","4","5","6"],c:2},
+  {q:"ما هي عاصمة قطر؟",a:["الدوحة","أبوظبي","المنامة","مسقط"],c:0},
+  {q:"ما هو أسرع وسيلة نقل في الهواء؟",a:["السيارة","الطائرة","السفينة","القطار"],c:1},
+  {q:"كم عدد القارات في العالم؟",a:["5","6","7","8"],c:2},
+  {q:"ما هي عاصمة فرنسا؟",a:["لندن","باريس","روما","مدريد"],c:1},
+  {q:"كم عدد كواكب المجموعة الشمسية؟",a:["7","8","9","10"],c:1},
+  {q:"ما هو لون العشب عادةً؟",a:["أحمر","أخضر","أزرق","أسود"],c:1},
+  {q:"كم عدد أطراف النجمة الخماسية؟",a:["3","4","5","6"],c:2},
+  {q:"كم عدد ألوان إشارة المرور؟",a:["2","3","4","5"],c:1},
+  {q:"ما هي اللغة التي يتحدث بها أهل مصر؟",a:["الإنجليزية","العربية","الفرنسية","التركية"],c:1},
+  {q:"في أي بلد يقع برج إيفل؟",a:["إيطاليا","إسبانيا","فرنسا","ألمانيا"],c:2},
+  {q:"ما هو الكوكب الأحمر؟",a:["الأرض","المريخ","المشتري","زحل"],c:1},
+  {q:"كم عدد عجلات السيارة؟",a:["2","3","4","6"],c:2},
+  {q:"كم عدد أشهر السنة الميلادية؟",a:["10","11","12","13"],c:2},
+  {q:"كم عدد أيام الأسبوع الدراسي في أغلب الدول؟",a:["4","5","6","7"],c:1},
+  {q:"ما هو أصغر كوكب في المجموعة الشمسية؟",a:["عطارد","المريخ","الزهرة","بلوتو"],c:0},
+  {q:"كم عدد حروف اللغة العربية؟",a:["26","28","29","30"],c:1},
+];
+const RACE_ROUNDS = parseInt(process.env.SPY_RACE_ROUNDS || '8', 10);
+const RACE_Q_MS = parseInt(process.env.SPY_RACE_Q_MS || '15000', 10);
+
+function initRace(room){
+  room.phase = 'race';
+  room.scores = {};
+  room.qIndex = 0;
+  room.qs = RACE_QUESTIONS.slice().sort(() => Math.random() - 0.5).slice(0, RACE_ROUNDS);
+  sendRaceQ(room);
+}
+function sendRaceQ(room){
+  if (room.phase !== 'race') return;
+  if (room.qIndex >= room.qs.length){ finishRace(room); return; }
+  const q = room.qs[room.qIndex];
+  const order = q.a.map((_, i) => i).sort(() => Math.random() - 0.5);
+  room.curQ = { ...q, opts: order.map(i => ({ idx: i, text: q.a[i] })), scored: false };
+  room.answered = {};
+  room.qDeadline = Date.now() + RACE_Q_MS;
+  if (room.qTimer) clearTimeout(room.qTimer);
+  room.qTimer = setTimeout(() => revealRaceQ(room), RACE_Q_MS);
+  broadcast(room, {
+    type: 'raceQ',
+    round: room.qIndex + 1,
+    total: room.qs.length,
+    text: q.q,
+    opts: room.curQ.opts,
+    endsAt: room.qDeadline,
+    scores: room.scores,
+  });
+}
+function revealRaceQ(room){
+  if (room.phase !== 'race') return;
+  if (room.qTimer) clearTimeout(room.qTimer);
+  const q = room.qs[room.qIndex];
+  broadcast(room, {
+    type: 'raceReveal',
+    round: room.qIndex + 1,
+    correct: q.c,
+    text: q.q,
+    scores: room.scores,
+  });
+  room.qIndex++;
+  setTimeout(() => sendRaceQ(room), 3200);
+}
+function finishRace(room){
+  if (room.phase !== 'race') return;
+  room.phase = 'result';
+  if (room.qTimer) clearTimeout(room.qTimer);
+  const ranked = room.players.map(p => ({ id: p.id, name: p.name, score: room.scores[p.id] || 0 }))
+    .sort((x, y) => y.score - x.score);
+  broadcast(room, { type: 'raceFinal', ranked, scores: room.scores });
+  setTimeout(() => { for (const p of room.players) { try { p.conn.close(); } catch (e) { } } rooms.delete(room.code); }, 180000);
+}
+function onRaceAns(room, conn, idx){
+  if (room.phase !== 'race' || !room.curQ) return;
+  if (room.answered[conn.playerId]) return;
+  room.answered[conn.playerId] = true;
+  const correct = idx === room.curQ.c;
+  if (correct && !room.curQ.scored){
+    room.curQ.scored = true;
+    room.scores[conn.playerId] = (room.scores[conn.playerId] || 0) + 1;
+    broadcast(room, { type: 'raceScored', id: conn.playerId, name: conn.name, scores: room.scores });
+  }
+  send(conn, { type: 'raceAnswer', correct });
+}
+
 function handleMessage(conn, data) {
   const msg = (typeof data === 'string') ? data : data.toString('utf8');
   let obj;
   try { obj = JSON.parse(msg); } catch (e) { return; }
 
   if (obj.type === 'create') {
-    const room = { code: genCode(), phase: 'lobby', players: [], votes: {} };
+    const game = obj.game === 'race' ? 'race' : 'spy';
+    const room = { code: genCode(), phase: 'lobby', players: [], votes: {}, game };
     rooms.set(room.code, room);
     conn.roomCode = room.code;
     conn.playerId = 0;
-    room.players.push({ id: 0, name: String(obj.name || 'لاعب 1').slice(0, 14), conn });
-    send(conn, { ...roomPayload(room), type: 'joined', code: room.code, id: 0, youId: 0 });
+    conn.name = String(obj.name || 'لاعب 1').slice(0, 14);
+    room.players.push({ id: 0, name: conn.name, conn });
+    send(conn, { ...roomPayload(room), type: 'joined', code: room.code, id: 0, youId: 0, game });
     broadcast(room, roomPayload(room));
     return;
   }
@@ -134,8 +230,9 @@ function handleMessage(conn, data) {
     if (room.phase !== 'lobby') { send(conn, { type: 'error', error: 'game-started' }); return; }
     conn.roomCode = room.code;
     conn.playerId = room.players.length;
-    room.players.push({ id: room.players.length, name: String(obj.name || ('لاعب ' + (room.players.length + 1))).slice(0, 14), conn });
-    send(conn, { ...roomPayload(room), type: 'joined', code: room.code, id: conn.playerId, youId: conn.playerId });
+    conn.name = String(obj.name || ('لاعب ' + (room.players.length + 1))).slice(0, 14);
+    room.players.push({ id: room.players.length, name: conn.name, conn });
+    send(conn, { ...roomPayload(room), type: 'joined', code: room.code, id: conn.playerId, youId: conn.playerId, game: room.game });
     broadcast(room, roomPayload(room));
     return;
   }
@@ -146,7 +243,14 @@ function handleMessage(conn, data) {
     // only host (id 0) can start, and need 3+ players
     if (conn.playerId !== 0) return;
     if (room.players.length < 3) { send(conn, { type: 'error', error: 'need-more' }); return; }
-    initRoom(room);
+    if (room.game === 'race') initRace(room);
+    else initRoom(room);
+    return;
+  }
+
+  if (obj.type === 'raceAns') {
+    const room = rooms.get(conn.roomCode);
+    if (room) onRaceAns(room, conn, obj.idx);
     return;
   }
 
@@ -196,6 +300,7 @@ function onClose(conn) {
   if (room.players.length === 0) {
     if (room.revealTimer) clearTimeout(room.revealTimer);
     if (room.voteTimer) clearTimeout(room.voteTimer);
+    if (room.qTimer) clearTimeout(room.qTimer);
     rooms.delete(code);
     return;
   }
