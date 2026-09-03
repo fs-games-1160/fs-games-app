@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>العاب F&S | F&S Games</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg1:#0f0c29;--bg2:#302b63;--bg3:#24243e;
+  --gold:#ffd700;--neon:#00e5ff;--pink:#ff4d6d;
+  --card:#ffffff12;--text:#fff;--sub:#cbd5e1;
+}
+html{height:100%}
+body{
+  min-height:100%;font-family:'Segoe UI',Tahoma,Arial,sans-serif;
+  background:linear-gradient(135deg,var(--bg1),var(--bg2),var(--bg3));
+  color:var(--text);overflow-x:hidden;
+}
+body.en{direction:ltr;font-family:'Segoe UI',Tahoma,Arial,sans-serif}
+.lang-ar{display:none}
+body.en .lang-en{display:inline}
+body.en .lang-ar{display:none}
+.lang-en{display:none}
+body.en .lang-ar{display:none}
+/* fix */
+body:not(.en) .lang-ar{display:inline}
+body:not(.en) .lang-en{display:none}
+
+/* ===== Header ===== */
+header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px;background:#00000055;backdrop-filter:blur(8px);
+  border-bottom:2px solid var(--gold);position:sticky;top:0;z-index:100;
+}
+.logo{font-size:1.4rem;font-weight:900;color:var(--gold);letter-spacing:1px}
+.logo span{color:var(--neon)}
+.score-pill{
+  background:var(--card);border:1px solid #ffffff44;padding:6px 14px;border-radius:30px;
+  font-size:.9rem;font-weight:700;
+}
+.score-pill b{color:var(--gold)}
+#langBtn{
+  background:linear-gradient(135deg,var(--neon),var(--pink));
+  border:none;color:#fff;font-weight:800;padding:8px 14px;border-radius:30px;cursor:pointer;font-size:.85rem;
+  box-shadow:0 4px 15px #00e5ff55;
+}
+#langBtn:active{transform:scale(.95)}
+
+/* ===== Screens ===== */
+.screen{display:none;padding:20px;max-width:900px;margin:0 auto;animation:fade .4s}
+.screen.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:none}}
+
+/* ===== Home ===== */
+.hero{text-align:center;margin:30px 0}
+.hero h1{font-size:2.6rem;font-weight:900;background:linear-gradient(90deg,var(--gold),var(--neon),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{color:var(--sub);margin-top:8px;font-size:1.05rem}
+.grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:30px;
+}
+.game-card{
+  background:var(--card);border:1px solid #ffffff22;border-radius:18px;padding:22px;cursor:pointer;
+  transition:.25s;text-align:center;position:relative;overflow:hidden;
+}
+.game-card:hover,.game-card:active{transform:translateY(-5px);border-color:var(--gold)}
+.game-card .icon{font-size:2.6rem;margin-bottom:10px;display:block}
+.game-card h3{font-size:1.15rem;margin-bottom:6px}
+.game-card p{color:var(--sub);font-size:.82rem}
+.game-card .stars{color:var(--gold);font-size:.8rem;margin-top:8px;display:block}
+.game-card.locked{opacity:.55;pointer-events:none}
+.game-card.locked::after{content:"🔒";position:absolute;top:10px;left:10px;font-size:1.2rem}
+
+/* ===== Generic ===== */
+.screen-title{text-align:center;font-size:1.8rem;font-weight:900;margin:10px 0 0}
+.back-btn{
+  background:var(--card);border:1px solid #ffffff44;color:#fff;padding:8px 16px;border-radius:30px;
+  cursor:pointer;font-size:.9rem;font-weight:700;margin:10px 0;
+}
+.back-btn:active{transform:scale(.95)}
+.q-area{text-align:center;margin:20px 0}
+.q-topics{text-align:center;margin-bottom:20px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.topic-chip{
+  background:var(--card);border:1px solid #ffffff33;padding:8px 16px;border-radius:30px;cursor:pointer;
+  font-size:.85rem;font-weight:700;transition:.2s;
+}
+.topic-chip.active{background:var(--gold);color:#000;border-color:var(--gold)}
+.q-box{background:var(--card);border:1px solid #ffffff22;border-radius:20px;padding:30px;max-width:640px;margin:0 auto}
+.q-sub{color:var(--neon);font-weight:800;font-size:.9rem;text-transform:uppercase;letter-spacing:2px}
+.q-text{font-size:1.4rem;font-weight:800;margin:18px 0}
+.options{display:grid;gap:12px;margin-top:20px}
+.opt{
+  background:#ffffff14;border:2px solid #ffffff33;border-radius:14px;padding:14px;cursor:pointer;
+  font-size:1.05rem;font-weight:700;color:#fff;transition:.15s;text-align:center;width:100%;
+}
+.opt:hover,.opt:active{background:#ffffff25}
+.opt.correct{background:#22c55e;border-color:#22c55e}
+.opt.wrong{background:#ef4444;border-color:#ef4444}
+.opt.disabled{pointer-events:none}
+.progress{height:8px;background:#ffffff22;border-radius:10px;margin-top:24px;overflow:hidden}
+.progress div{height:100%;background:linear-gradient(90deg,var(--gold),var(--neon));transition:width .3s;border-radius:10px}
+.result-panel{text-align:center}
+.result-panel .big{font-size:3rem;font-weight:900;color:var(--gold)}
+.result-msg{margin:10px 0 20px;color:var(--sub)}
+
+/* Buttons */
+.btn{
+  display:inline-block;background:linear-gradient(135deg,var(--gold),#ffb800);color:#000;
+  border:none;font-weight:900;padding:14px 34px;border-radius:40px;cursor:pointer;font-size:1.05rem;
+  box-shadow:0 6px 20px #ffd70044;transition:.15s;
+}
+.btn:active{transform:scale(.95)}
+.btn.blue{background:linear-gradient(135deg,var(--neon),#0099ff);color:#000;box-shadow:0 6px 20px #00e5ff44}
+.btn.pink{background:linear-gradient(135deg,var(--pink),#c00040);color:#fff;box-shadow:0 6px 20px #ff4d6d66}
+
+/* Game specific */
+#memoryGrid,.num-grid,.match-grid{display:grid;gap:10px;max-width:400px;margin:0 auto}
+#memoryGrid{grid-template-columns:repeat(4,1fr)}
+.num-grid{grid-template-columns:repeat(3,1fr)}
+.match-grid{grid-template-columns:repeat(2,1fr)}
+.card{aspect-ratio:1;background:#ffffff15;border:2px solid #ffffff33;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.9rem;cursor:pointer;transition:.2s}
+.card.flip{background:var(--gold);border-color:var(--gold);color:#000;transform:rotateY(180deg)}
+.card.matched{background:#22c55e;border-color:#22c55e;color:#fff;pointer-events:none;opacity:.6}
+.card:hover,.card:active{background:#ffffff28}
+.tile{aspect-ratio:1;background:#ffffff15;border:2px solid #ffffff33;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.9rem;cursor:pointer;transition:.2s}
+.tile:hover,.tile:active{background:#ffffff25}
+.tile svg{width:60%;height:60%}
+.tile.disabled{color:#22c55e}
+.target-display{font-size:2.2rem;font-weight:900;color:var(--neon);text-align:center;margin:10px 0}
+
+.timer{color:var(--gold);font-size:1.4rem;font-weight:900;text-align:center;margin:10px 0}
+input[type=text],input[type=number]{
+  background:#ffffff14;border:2px solid #ffffff33;color:#fff;border-radius:14px;padding:12px 16px;
+  font-size:1.1rem;width:100%;max-width:300px;text-align:center;outline:none;margin:8px auto;display:block;
+}
+input:focus{border-color:var(--neon)}
+input::placeholder{color:#ffffff66}
+label{display:block;margin:10px auto;max-width:300px;color:var(--sub);font-size:.9rem;text-align:center}
+.center{text-align:center}
+.mt{margin-top:16px}
+.word-box{font-size:2.4rem;font-weight:900;letter-spacing:14px;color:var(--neon);text-align:center;margin:10px 0;text-transform:uppercase}
+.hint{color:var(--sub);font-size:.9rem;text-align:center;margin:6px 0}
+.feedback{font-size:1.2rem;font-weight:800;text-align:center;margin:12px 0;min-height:30px}
+.color-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:300px;margin:0 auto}
+.flag-box{text-align:center;margin:0 auto 10px;line-height:1}
+.flag-box img{width:160px;height:auto;border-radius:10px;box-shadow:0 8px 20px #00000088;border:2px solid #ffffff33;max-width:80%}
+.cp{aspect-ratio:2/1;border-radius:12px;cursor:pointer;border:2px solid #fff3;transition:.15s}
+.cp:active{transform:scale(.92)}
+.seq-circle{background:var(--card);border:2px solid var(--neon);width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;margin:6px;transition:.3s}
+.seq-row{display:flex;flex-wrap:wrap;justify-content:center}
+.seq-circle.on{background:var(--neon);color:#000;transform:scale(1.1)}
+.rock{display:flex;gap:8px;margin:10px auto;max-width:340px;justify-content:center}
+.rock .slot{width:70px;height:80px;background:#ffffff12;border:2px dashed #ffffff44;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.6rem}
+.small-stars{color:var(--gold);text-align:center}
+.stat-row{margin:6px auto;max-width:300px;text-align:center;background:#ffffff10;border-radius:10px;padding:8px;font-size:1rem}
+
+#toast{
+  position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(80px);
+  background:#000;border:2px solid var(--gold);color:#fff;padding:12px 24px;border-radius:40px;
+  font-weight:800;transition:.3s;opacity:0;z-index:999;font-size:1rem;text-align:center;
+}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+.full-progress{position:fixed;top:0;left:0;height:4px;background:var(--gold);width:0;z-index:200;transition:width .3s}
+
+@media(max-width:480px){
+  .hero h1{font-size:2rem}
+  .grid{grid-template-columns:repeat(2,1fr)}
+  .q-text{font-size:1.15rem}
+  .card{font-size:1.4rem}
+}
+</style>
+</head>
+<body>
+<div class="full-progress" id="topBar"></div>
+
+<header>
+  <div class="logo">F<span>&</span>S | <span class="lang-ar">العاب</span><span class="lang-en">Games</span></div>
+  <div class="score-pill">🏆 <b id="totalScore">0</b></div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span id="userBadge" style="font-size:.8rem;font-weight:700;color:var(--neon)" hidden></span>
+    <button id="friendsBtn" onclick="openFriends()" style="background:var(--card);border:1px solid #ffffff44;color:var(--gold);font-weight:800;padding:8px 12px;border-radius:30px;cursor:pointer;font-size:.85rem" hidden>👥 <span class="lang-ar">أصدقائي</span><span class="lang-en">Friends</span></button>
+    <button id="logoutBtn" onclick="logout()" style="background:var(--card);border:1px solid #ffffff44;color:var(--pink);font-weight:800;padding:8px 12px;border-radius:30px;cursor:pointer;font-size:.85rem" hidden>↩</button>
+    <button id="langBtn" onclick="toggleLang()">EN</button>
+  </div>
+</header>
+
+<!-- AUTH OVERLAY -->
+<div id="authScreen" style="position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--bg1),var(--bg2),var(--bg3));padding:16px">
+  <div style="background:var(--card);border:1px solid #ffffff30;border-radius:24px;padding:26px;width:100%;max-width:420px;box-shadow:0 20px 60px #00000088">
+    <div style="text-align:center;margin-bottom:18px">
+      <div style="font-size:2.4rem;font-weight:900;background:linear-gradient(90deg,var(--gold),var(--neon),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent">F&amp;S</div>
+      <div style="margin-top:6px;color:var(--sub)"><span class="lang-ar">سجّل دخولك وابدأ التحدي</span><span class="lang-en">Log in and start playing</span></div>
+    </div>
+    <!-- Tabs -->
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button class="auth-tab" id="tabLogin" onclick="switchAuth('login')" style="flex:1;padding:10px;border-radius:12px;border:none;font-weight:800;cursor:pointer"><span class="lang-ar">دخول</span><span class="lang-en">Login</span></button>
+      <button class="auth-tab" id="tabRegister" onclick="switchAuth('register')" style="flex:1;padding:10px;border-radius:12px;border:none;font-weight:800;cursor:pointer"><span class="lang-ar">حساب جديد</span><span class="lang-en">Sign up</span></button>
+    </div>
+    <!-- Auth msg -->
+    <div id="authMsg" style="display:none;background:#ff4d6d22;border:1px solid #ff4d6d55;color:#ffb3c1;padding:10px;border-radius:10px;font-size:.85rem;margin-bottom:12px"></div>
+
+    <!-- REGISTER -->
+    <div id="regFields">
+      <input id="regUser" placeholder="Username / اسم المستخدم" style="width:100%;padding:12px;border-radius:12px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;margin-bottom:10px;font-size:.95rem">
+      <input id="regEmail" type="email" placeholder="Email / الإيميل (اختياري)" style="width:100%;padding:12px;border-radius:12px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;margin-bottom:10px;font-size:.95rem">
+      <input id="regPass" type="password" placeholder="Password / كلمة المرور" style="width:100%;padding:12px;border-radius:12px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;margin-bottom:12px;font-size:.95rem">
+    </div>
+
+    <!-- LOGIN -->
+    <div id="loginFields" style="display:none">
+      <input id="loginUser" placeholder="Username or Email" style="width:100%;padding:12px;border-radius:12px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;margin-bottom:10px;font-size:.95rem">
+      <input id="loginPass" type="password" placeholder="Password" style="width:100%;padding:12px;border-radius:12px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;margin-bottom:12px;font-size:.95rem">
+    </div>
+
+    <!-- GENDER -->
+    <div style="margin-bottom:14px">
+      <div style="margin-bottom:8px;color:var(--sub);font-size:.9rem"><span class="lang-ar">الجنس</span><span class="lang-en">Gender</span></div>
+      <div style="display:flex;gap:8px">
+        <button class="gender-btn" data-gender="male" onclick="pickGender('male')" style="flex:1;padding:11px;border-radius:12px;border:2px solid #ffffff22;background:#ffffff0d;color:#fff;font-weight:800;cursor:pointer">👦 <span class="lang-ar">ذكر</span><span class="lang-en">Male</span></button>
+        <button class="gender-btn" data-gender="female" onclick="pickGender('female')" style="flex:1;padding:11px;border-radius:12px;border:2px solid #ffffff22;background:#ffffff0d;color:#fff;font-weight:800;cursor:pointer">👧 <span class="lang-ar">أنثى</span><span class="lang-en">Female</span></button>
+      </div>
+    </div>
+
+    <button id="authSubmit" onclick="submitAuth()" style="width:100%;padding:13px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--gold),var(--pink));color:#fff;font-weight:900;font-size:1rem;cursor:pointer"><span class="lang-ar">دخول</span><span class="lang-en">Login</span></button>
+    <button onclick="guestLogin()" style="width:100%;margin-top:10px;padding:12px;border-radius:12px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;font-weight:800;cursor:pointer">🎮 <span class="lang-ar">الدخول كضيف</span><span class="lang-en">Continue as Guest</span></button>
+  </div>
+</div>
+
+<!-- FRIENDS OVERLAY -->
+<div id="friendsScreen" style="position:fixed;inset:0;z-index:900;display:none;align-items:center;justify-content:center;background:#000000cc;padding:16px">
+  <div style="background:#1b1b3a;border:1px solid #ffffff30;border-radius:24px;padding:22px;width:100%;max-width:440px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px #00000088">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-size:1.3rem;font-weight:900;color:var(--gold)">👥 <span class="lang-ar">أصدقائي</span><span class="lang-en">My Friends</span></div>
+      <button onclick="closeFriends()" style="background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer">✕</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <input id="searchUser" placeholder="Username / اكتب اسم المستخدم" style="flex:1;padding:11px;border-radius:12px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;font-size:.9rem">
+      <button onclick="searchUsers()" style="padding:11px 16px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--neon),var(--pink));color:#fff;font-weight:900;cursor:pointer">🔎</button>
+    </div>
+    <div id="searchResults" style="margin-bottom:12px"></div>
+    <div style="font-size:1rem;font-weight:800;color:var(--sub);margin-bottom:8px"><span class="lang-ar">قائمة الأصدقاء</span><span class="lang-en">Friends list</span></div>
+    <div id="friendsList"></div>
+  </div>
+</div>
+
+<!-- HOME -->
+<section id="home" class="screen active">
+  <div class="hero">
+    <h1>🎮 <span class="lang-ar">العاب F&S</span><span class="lang-en">F&S Games</span></h1>
+    <p class="lang-ar">عشر ألعاب في لعبة واحدة | اختر لعبة وابدأ التحدي</p>
+    <p class="lang-en">10 games in one | Pick a game and start the challenge</p>
+  </div>
+  <div class="grid" id="homeGrid"></div>
+</section>
+
+<!-- GAME SHELL -->
+<section id="gameScreen" class="screen">
+  <button class="back-btn" onclick="goHome()">🔙 <span class="lang-ar">القائمة الرئيسية</span><span class="lang-en">Main Menu</span></button>
+  <div class="screen-title" id="gameTitle"></div>
+  <div id="gameArea"></div>
+</section>
+
+<!-- GAME SELECTOR -->
+<section id="pickerScreen" class="screen">
+  <button class="back-btn" onclick="goHome()">🔙 <span class="lang-ar">القائمة</span><span class="lang-en">Menu</span></button>
+  <div class="screen-title" id="pickerTitle"></div>
+  <div class="grid" id="pickerGrid"></div>
+</section>
+
+<div id="toast"></div>
+<audio id="sfxOk"></audio>
+<audio id="sfxBad"></audio>
+<audio id="sfxClick"></audio>
+<audio id="sfxWin"></audio>
+
+<script>
+/* ============ LANG ============ */
+let lang = localStorage.getItem('flang') || 'ar';
+function applyLang(){
+  document.querySelector('body').classList.toggle('en', lang==='en');
+  document.documentElement.lang = lang==='en'?'en':'ar';
+  document.documentElement.dir = lang==='en'?'ltr':'rtl';
+  document.getElementById('langBtn').textContent = lang==='en'?'عربي':'EN';
+  renderHome();
+}
+function toggleLang(){ lang = lang==='en'?'ar':'en'; localStorage.setItem('flang',lang); applyLang(); 
+  if(document.getElementById('gameScreen').classList.contains('active')) startGame(currentGame); }
+function t(a,e){ return lang==='en'?e:a; }
+
+/* ============ AUDIO ============ */
+let soundOn=true;
+try{
+  document.getElementById('sfxOk').src='data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ'+( 'oGAAA=' );
+}catch(e){}
+function playOk(){ try{ sfxOk.play(); }catch(e){} }
+
+/* ============ STATE ============ */
+const totalGames=10;
+let gameStars = JSON.parse(localStorage.getItem('fgames')||'{}');
+let deduction = parseInt(localStorage.getItem('fded')||'0');
+let currentGame=0;
+let gameActive=false;
+function totalScore(){ let s=0; for(const k in gameStars) s+=gameStars[k][0]; return s-deduction; }
+function updateScore(){
+  document.getElementById('totalScore').textContent=totalScore();
+  if(curUser){ curScore.total_score=totalScore(); pushScore(); }
+}
+function deductWin(){ deduction++; localStorage.setItem('fded',deduction); updateScore(); }
+
+/* ============ GAME CATALOG ============ */
+const BGS = {
+  "mem":  {"icon":"🧠","name":"Memory","ti":"ذاكرة","d":{"ar":"اطلب الخانات المتشابهة","en":"Match the pairs"}},
+  "quiz": {"icon":"❓","name":"Questions","ti":"أسئلة","d":{"ar":"مسابقة أسئلة عامة","en":"General trivia quiz"}},
+  "math": {"icon":"🔢","name":"Math","ti":"حساب","d":{"ar":"عمليات حسابية سريعة","en":"Quick math operations"}},
+  "hang": {"icon":"🖊️","name":"GuessWord","ti":"خمن الكلمة","d":{"ar":"كشف الكلمة حرف بحرف مع مساعدة","en":"Guess the word with a hint"}},
+  "rock": {"icon":"✂️","name":"RPS","ti":"حجر ورقة مقص","d":{"ar":"تغلب على الكمبيوتر","en":"Beat the computer"}},
+  "color":{"icon":"🌈","name":"Colors","ti":"الألوان","d":{"ar":"اختر اللون المناسب","en":"Pick the right color"}},
+  "seq":  {"icon":"🏛️","name":"Capitals","ti":"عواصم","d":{"ar":"خمن عواصم الدول","en":"Guess the capitals"}},
+  "t3":   {"icon":"⭕","name":"TicTacToe","ti":"إكس أو","d":{"ar":"لعبة إكس أو الكلاسيكية","en":"Classic tic-tac-toe"}},
+  "guess":{"icon":"🔢","name":"GuessNum","ti":"خمن الرقم","d":{"ar":"خمن الرقم السري","en":"Guess the secret number"}},
+  "slots":{"icon":"🌍","name":"GuessCountry","ti":"خمن الدولة","d":{"ar":"خمن الدولة من العلم (الرموز)","en":"Guess the country (from clues)"}},
+};
+const GAMES = [
+  {id:"mem", un:"ARABIC"},
+  {id:"quiz", un:null},
+  {id:"math", un:null},
+  {id:"hang", un:null},
+  {id:"rock", un:null},
+  {id:"color", un:null},
+  {id:"seq", un:null},
+  {id:"t3", un:null},
+  {id:"guess", un:null},
+  {id:"slots", un:null},
+];
+const QUIZ_TOPICS = ["general","geo","science","history","animals"];
+
+function starsStr(s){ let r=""; for(let i=0;i<3;i++) r += i<s ? "⭐":"☆"; return r; }
+
+function renderHome(){
+  const g=document.getElementById('homeGrid');
+  g.innerHTML='';
+  for(let i=0;i<totalGames;i++){
+    const gm=GAMES[i];const info=BGS[gm.id];
+    const ss=gameStars[gm.id]||[0];
+    const el=document.createElement('div');
+    el.className='game-card';
+    el.innerHTML=`<span class="icon">${info.icon}</span>
+      <h3>${lang==='en'?info.name:info.ti}</h3><p>${t(info.d.ar,info.d.en)}</p>
+      <span class="stars">${starsStr(ss[0])}</span>`;
+    el.onclick=()=>startGame(i);
+    g.appendChild(el);
+  }
+}
+
+/* ============ NAV ============ */
+function stopAllTimers(){ if(mathState&&mathState.timer)clearInterval(mathState.timer); if(mathState)mathState.timer=null; if(guessState&&guessState.timer)clearInterval(guessState.timer); }
+function goHome(){
+  stopAllTimers();
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('home').classList.add('active');
+  renderHome();updateScore();
+}
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function topBar(p){ document.getElementById('topBar').style.width=p+'%'; }
+
+function startGame(i){
+  stopAllTimers();
+  currentGame=i;
+  document.getElementById('gameTitle').textContent = lang==='en' ? BGS[GAMES[i].id].name : BGS[GAMES[i].id].ti;
+  showScreen('gameScreen');
+  topBar(((i)/(totalGames))*100);
+  switch(GAMES[i].id){
+    case 'quiz': initQuiz();break;
+    case 'math': initMath();break;
+    case 'mem': initMemory();break;
+    case 'hang': initHangman();break;
+    case 'rock': initRock();break;
+    case 'color': initColor();break;
+    case 'seq': initSeq();break;
+    case 't3': initT3();break;
+    case 'guess': initGuess();break;
+    case 'slots': initSlots();break;
+  }
+}
+function award(stars){
+  const prev=gameStars[GAMES[currentGame].id]||[0,0];
+  if(stars>prev[0]){ gameStars[GAMES[currentGame].id]=[Math.max(prev[0],stars),Date.now()]; localStorage.setItem('fgames',JSON.stringify(gameStars)); }
+  updateScore();
+}
+
+/* ============ QUIZ (F&S) ============ */
+const QUIZ={
+ general:{ar:[
+   {q:"كم عدد أيام الأسبوع؟",a:["5","6","7","8"],c:2},
+   {q:"ما هي أكبر قارة في العالم؟",a:["أفريقيا","آسيا","أوروبا","أمريكا"],c:1},
+   {q:"كم عدد ألوان قوس قزح؟",a:["5","6","7","8"],c:2},
+   {q:"ما هي عاصمة السعودية؟",a:["جدة","الرياض","مكة","الدمام"],c:1},
+   {q:"كم عدد أرجل العنكبوت؟",a:["6","8","10","4"],c:1},
+   {q:"ما هو أكبر محيط في العالم؟",a:["الأطلسي","الهادي","الهندي","المتجمد"],c:1},
+   {q:"كم عدد حواس الإنسان الأساسية؟",a:["4","5","6","7"],c:1},
+   {q:"في أي فصل تتساقط أوراق الأشجار عادةً؟",a:["الربيع","الصيف","الخريف","الشتاء"],c:2},
+   {q:"ما هي اللغة الأكثر تحدثاً في العالم؟",a:["الإنجليزية","الإسبانية","الصينية","العربية"],c:2},
+   {q:"كم عدد ساعات اليوم؟",a:["12","20","24","30"],c:2},
+   {q:"ما هو لون البحر عادةً؟",a:["أحمر","أخضر","أزرق","أصفر"],c:2},
+   {q:"ما هو أطول أطلس برّي في العالم؟",a:["جبل إفرست","جبال الألب","جبال الهيمالايا","جبال الأنديز"],c:0},
+   {q:"كم عدد أصابع اليد الواحدة؟",a:["3","4","5","6"],c:2},
+   {q:"ما هو أسرع وسيلة نقل في الهواء؟",a:["السيارة","الطائرة","السفينة","القطار"],c:1},
+   {q:"ما هي عاصمة قطر؟",a:["الدوحة","أبوظبي","المنامة","مسقط"],c:0},
+ ],en:[
+   {q:"How many days in a week?",a:["5","6","7","8"],c:2},
+   {q:"What is the largest continent?",a:["Africa","Asia","Europe","America"],c:1},
+   {q:"How many colors in a rainbow?",a:["5","6","7","8"],c:2},
+   {q:"What is the capital of Saudi Arabia?",a:["Jeddah","Riyadh","Mecca","Dammam"],c:1},
+   {q:"How many legs does a spider have?",a:["6","8","10","4"],c:1},
+   {q:"What is the largest ocean?",a:["Atlantic","Pacific","Indian","Arctic"],c:1},
+   {q:"How many basic human senses are there?",a:["4","5","6","7"],c:1},
+   {q:"In which season do leaves usually fall?",a:["Spring","Summer","Autumn","Winter"],c:2},
+   {q:"What is the most spoken language?",a:["English","Spanish","Chinese","Arabic"],c:2},
+   {q:"How many hours in a day?",a:["12","20","24","30"],c:2},
+   {q:"What color is the sea usually?",a:["Red","Green","Blue","Yellow"],c:2},
+   {q:"What is the highest mountain on Earth?",a:["Everest","Alps","Himalayas","Andes"],c:0},
+   {q:"How many fingers on one hand?",a:["3","4","5","6"],c:2},
+   {q:"What is the fastest way to travel in the air?",a:["Car","Plane","Ship","Train"],c:1},
+   {q:"What is the capital of Qatar?",a:["Doha","Abu Dhabi","Manama","Muscat"],c:0},
+ ]},
+ geo:{ar:[
+   {q:"كم عدد الدول العربية في منظمة الجامعة العربية؟",a:["18","22","25","20"],c:1},
+   {q:"ما هو أطول نهر في العالم؟",a:["الفرات","النيل","الأمازون","دجلة"],c:1},
+   {q:"في أي قارة تقع مصر؟",a:["آسيا","إفريقيا","أوروبا","أمريكا"],c:1},
+   {q:"ما هي أكبر دولة عربية مساحةً؟",a:["السعودية","مصر","الجزائر","السودان"],c:2},
+   {q:"كم عدد القارات في العالم؟",a:["5","6","7","8"],c:2},
+   {q:"ما هي عاصمة فرنسا؟",a:["لندن","باريس","روما","مدريد"],c:1},
+   {q:"أين تقع أهرامات الجيزة؟",a:["مصر","العراق","السودان","الأردن"],c:0},
+   {q:"ما هي أكبر جزيرة في العالم؟",a:["أندونيسيا","جرينلاند","مدغشقر","بورنيو"],c:1},
+   {q:"كم عدد دول الخليج العربي؟",a:["5","6","7","8"],c:1},
+   {q:"ما هي أصغر دولة في العالم؟",a:["موناكو","الفاتيكان","مالطا","سان مارينو"],c:1},
+   {q:"في أي قارة تقع الهند؟",a:["أوروبا","آسيا","أفريقيا","أمريكا الجنوبية"],c:1},
+   {q:"ما هي عاصمة إيطاليا؟",a:["روما","ميلانو","نابولي","فلورنسا"],c:0},
+   {q:"أطول سور في العالم موجود في؟",a:["كوريا","الصين","اليابان","فيتنام"],c:1},
+   {q:"ما هي أكبر صحراء حارة في العالم؟",a:["الصحراء الكبرى","الربع الخالي","غوبي","كالاهاري"],c:0},
+   {q:"ما هي أطول دولة في العالم امتداداً من الشرق للغرب؟",a:["روسيا","كندا","الصين","الولايات المتحدة"],c:0},
+ ],en:[
+   {q:"How many Arab countries are in the Arab League?",a:["18","22","25","20"],c:1},
+   {q:"What is the longest river in the world?",a:["Euphrates","Nile","Amazon","Tigris"],c:1},
+   {q:"Which continent is Egypt in?",a:["Asia","Africa","Europe","America"],c:1},
+   {q:"What is the largest Arab country by area?",a:["Saudi","Egypt","Algeria","Sudan"],c:2},
+   {q:"How many continents are there?",a:["5","6","7","8"],c:2},
+   {q:"What is the capital of France?",a:["London","Paris","Rome","Madrid"],c:1},
+   {q:"Where are the Pyramids of Giza?",a:["Egypt","Iraq","Sudan","Jordan"],c:0},
+   {q:"What is the largest island in the world?",a:["Indonesia","Greenland","Madagascar","Borneo"],c:1},
+   {q:"How many Gulf countries are there?",a:["5","6","7","8"],c:1},
+   {q:"What is the smallest country in the world?",a:["Monaco","Vatican","Malta","San Marino"],c:1},
+   {q:"Which continent is India in?",a:["Europe","Asia","Africa","South America"],c:1},
+   {q:"What is the capital of Italy?",a:["Rome","Milan","Naples","Florence"],c:0},
+   {q:"The Great Wall is in which country?",a:["Korea","China","Japan","Vietnam"],c:1},
+   {q:"What is the largest hot desert?",a:["Sahara","Rub' al Khali","Gobi","Kalahari"],c:0},
+   {q:"What is the largest country by area?",a:["Russia","Canada","China","USA"],c:0},
+ ]},
+ science:{ar:[
+   {q:"ما هو الكوكب الأحمر؟",a:["الأرض","المريخ","المشتري","زحل"],c:1},
+   {q:"كم عدد الكواكب في المجموعة الشمسية؟",a:["7","8","9","10"],c:1},
+   {q:"من ماذا يتكون الماء؟",a:["أكسجين وكربون","هيدروجين وأكسجين","نيتروجين وأكسجين","هيدروجين وهليوم"],c:1},
+   {q:"ما هو أقرب كوكب إلى الشمس؟",a:["الزهرة","المريخ","عطارد","الأرض"],c:2},
+   {q:"ما هو العضو الذي يضخ الدم؟",a:["الرئة","القلب","الكبد","الدماغ"],c:1},
+   {q:"ما هو أسرع حيوان بري؟",a:["الأسد","الفهد","الغزال","الحصان"],c:1},
+   {q:"ماذا نسمي عملية تحول الماء إلى بخار؟",a:["التجمد","التبخر","الانصهار","التكاثف"],c:1},
+   {q:"كم عدد أسنان الإنسان البالغ؟",a:["28","30","32","34"],c:2},
+   {q:"ما هو الغاز الذي نتنفسه للبقاء على قيد الحياة؟",a:["ثاني أكسيد الكربون","الأكسجين","النيتروجين","الهيدروجين"],c:1},
+   {q:"ما هو أكبر عضو في جسم الإنسان؟",a:["القلب","الكبد","الجلد","الرئة"],c:2},
+   {q:"ما هو النجم الأقرب إلى الأرض؟",a:["الشمس","القطب الشمالي","سيريوس","النجم القطبي"],c:0},
+   {q:"كم عدد عظام جسم الإنسان البالغ؟",a:["186","206","226","246"],c:1},
+   {q:"ما هي وحدة قياس شدة التيار الكهربائي؟",a:["الفولت","الأمبير","الواط","الأوم"],c:1},
+   {q:"ما هو أذكى حيوان بحري؟",a:["السلحفاة","الأخطبوط","الحوت الأزرق","نجم البحر"],c:1},
+   {q:"ما هو الصوت الذي يسافر أسرع: الصوت أم الضوء؟",a:["الصوت","الضوء","كلاهما متساويان","يعتمد"],c:1},
+ ],en:[
+   {q:"What is the red planet?",a:["Earth","Mars","Jupiter","Saturn"],c:1},
+   {q:"How many planets in our solar system?",a:["7","8","9","10"],c:1},
+   {q:"What is water made of?",a:["Oxygen & Carbon","Hydrogen & Oxygen","Nitrogen & Oxygen","Hydrogen & Helium"],c:1},
+   {q:"What is the closest planet to the sun?",a:["Venus","Mars","Mercury","Earth"],c:2},
+   {q:"Which organ pumps blood?",a:["Lung","Heart","Liver","Brain"],c:1},
+   {q:"What is the fastest land animal?",a:["Lion","Cheetah","Deer","Horse"],c:1},
+   {q:"What is the process of water turning into vapor?",a:["Freezing","Evaporation","Melting","Condensation"],c:1},
+   {q:"How many teeth does an adult have?",a:["28","30","32","34"],c:2},
+   {q:"Which gas do we breathe to survive?",a:["Carbon dioxide","Oxygen","Nitrogen","Hydrogen"],c:1},
+   {q:"What is the largest organ in the human body?",a:["Heart","Liver","Skin","Lungs"],c:2},
+   {q:"Which star is closest to Earth?",a:["The Sun","Polaris","Sirius","Proxima"],c:0},
+   {q:"How many bones are in the adult human body?",a:["186","206","226","246"],c:1},
+   {q:"What is the unit of electric current?",a:["Volt","Ampere","Watt","Ohm"],c:1},
+   {q:"What is the smartest sea animal?",a:["Turtle","Octopus","Blue whale","Starfish"],c:1},
+   {q:"Which travels faster: sound or light?",a:["Sound","Light","Both equal","Depends"],c:1},
+ ]},
+ history:{ar:[
+   {q:"في أي عام انتهت الحرب العالمية الثانية؟",a:["1943","1945","1948","1950"],c:1},
+   {q:"من اكتشف قارة أمريكا؟",a:["ماجلان","كولومبوس","فاسكو دي غاما","ماركو بولو"],c:1},
+   {q:"ما المدينة التي تلقب بعروس البحر الأحمر؟",a:["جدة","الإسكندرية","الرياض","الدوحة"],c:0},
+   {q:"كم عدد الخلفاء الراشدين؟",a:["3","2","4","5"],c:2},
+   {q:"في أي قرن هُدمت الدولة العثمانية؟",a:["18","19","20","21"],c:2},
+   {q:"من هو أول من بشر برسالة الإسلام؟",a:["أبو بكر","خديجة","علي بن أبي طالب","عثمان"],c:0},
+   {q:"في أي عام تأسست المملكة العربية السعودية؟",a:["1930","1932","1934","1938"],c:1},
+   {q:"ما هي الحضارة القديمة التي اشتهرت بالتحنيط؟",a:["اليونانية","الرومانية","المصرية","الفارسية"],c:2},
+   {q:"من هو مؤسس الإمبراطورية المقدونية الشهيرة؟",a:["أرسطو","الإسكندر الأكبر","هانيبال","يوليوس قيصر"],c:1},
+   {q:"في أي عام هبط الإنسان على القمر؟",a:["1965","1969","1972","1975"],c:1},
+   {q:"ما هي أول عاصمة للإسلام بعد المدينة؟",a:["القدس","الكوفة","دمشق","بغداد"],c:2},
+   {q:"كم استمرت الخلافة العثمانية تقريباً؟",a:["300 عام","400 عام","600 عام","900 عام"],c:2},
+   {q:"من هو أول رئيس للولايات المتحدة الأمريكية؟",a:["لينكولن","واشنطن","جيفرسون","روزفلت"],c:1},
+   {q:"ما هي أقدم حضارة في العالم؟",a:["اليونانية","السومرية","المصرية","الصينية"],c:1},
+   {q:"في أي معركة انتصر المسلمون على غزوة بدر؟",a:["أحد","بدر","الخندق","حنين"],c:1},
+ ],en:[
+   {q:"In which year did WWII end?",a:["1943","1945","1948","1950"],c:1},
+   {q:"Who discovered America?",a:["Magellan","Columbus","Vasco da Gama","Marco Polo"],c:1},
+   {q:"Which city is called the bride of the Red Sea?",a:["Jeddah","Alexandria","Riyadh","Doha"],c:0},
+   {q:"How many Rightly Guided Caliphs?",a:["3","2","4","5"],c:2},
+   {q:"In which century did the Ottoman Empire end?",a:["18th","19th","20th","21st"],c:2},
+   {q:"Who was the first to support Prophet Muhammad?",a:["Abu Bakr","Khadija","Ali","Uthman"],c:0},
+   {q:"In which year was Saudi Arabia founded?",a:["1930","1932","1934","1938"],c:1},
+   {q:"Which ancient civilization is famous for mummification?",a:["Greek","Roman","Egyptian","Persian"],c:2},
+   {q:"Who founded the famous Macedonian empire?",a:["Aristotle","Alexander the Great","Hannibal","Julius Caesar"],c:1},
+   {q:"In which year did man land on the Moon?",a:["1965","1969","1972","1975"],c:1},
+   {q:"What was the first Islamic capital after Medina?",a:["Jerusalem","Kufa","Damascus","Baghdad"],c:2},
+   {q:"How long did the Ottoman Empire last roughly?",a:["300 years","400 years","600 years","900 years"],c:2},
+   {q:"Who was the first US president?",a:["Lincoln","Washington","Jefferson","Roosevelt"],c:1},
+   {q:"What is the oldest civilization in the world?",a:["Greek","Sumerian","Egyptian","Chinese"],c:1},
+   {q:"In which battle did the Muslims win at Badr?",a:["Uhud","Badr","Trench","Hunayn"],c:1},
+ ]},
+ animals:{ar:[
+   {q:"ما هو أسرع حيوان بري؟",a:["الأسد","الفهد","الغزال","الحصان"],c:1},
+   {q:"ما هو أكبر حيوان في العالم؟",a:["الفيل","الحوت الأزرق","الزرافة","سمك القرش"],c:1},
+   {q:"ما هي أذكى فصيلة الحيوانات؟",a:["الدلفين","القط","الأرنب","البطريق"],c:0},
+   {q:"كم عدد قلوب الأخطبوط؟",a:["1","2","3","4"],c:2},
+   {q:"ما الطائر الذي لا يطير؟",a:["العصفور","النسر","البطريق","الصقر"],c:2},
+   {q:"كم عدد أرجل النملة؟",a:["4","6","8","10"],c:1},
+   {q:"ما هو الحيوان الملقب بملك الغابة؟",a:["الفيل","النمر","الأسد","الدب"],c:2},
+   {q:"كم ساعة ينام الباندا يومياً؟",a:["4","8","12","17"],c:3},
+   {q:"ما هو أطول حيوان رقبةً؟",a:["الفيل","الزرافة","النعامة","الحصان"],c:1},
+   {q:"ما الحيوان الذي يعيش أطول حياة؟",a:["الفيل","السلحفاة","الحوت","الببغاء"],c:1},
+   {q:"كم عدد عيون النحلة؟",a:["2","3","5","100"],c:2},
+   {q:"ما هو الحيوان الذي يستطيع تغيير لونه؟",a:["السمكة","الحرباء","الأفعى","العقرب"],c:1},
+   {q:"ما هو الحيوان الثديي الوحيد الذي يطير؟",a:["الطائر","الخفاش","السنجاب","الخلد"],c:1},
+   {q:"كم عدد أصابع الدب؟",a:["4","5","6","8"],c:1},
+   {q:"ما هو أذكى الحيوانات البرية؟",a:["القرد","الفيل","الدلفين","الكلب"],c:0},
+ ],en:[
+   {q:"What is the fastest land animal?",a:["Lion","Cheetah","Deer","Horse"],c:1},
+   {q:"What is the largest animal in the world?",a:["Elephant","Blue Whale","Giraffe","Shark"],c:1},
+   {q:"Which is the smartest animal species?",a:["Dolphin","Cat","Rabbit","Penguin"],c:0},
+   {q:"How many hearts does an octopus have?",a:["1","2","3","4"],c:2},
+   {q:"Which bird cannot fly?",a:["Sparrow","Eagle","Penguin","Falcon"],c:2},
+   {q:"How many legs does an ant have?",a:["4","6","8","10"],c:1},
+   {q:"Which animal is called the king of the jungle?",a:["Elephant","Tiger","Lion","Bear"],c:2},
+   {q:"How many hours a day does a panda sleep?",a:["4","8","12","17"],c:3},
+   {q:"Which animal has the longest neck?",a:["Elephant","Giraffe","Ostrich","Horse"],c:1},
+   {q:"Which animal lives the longest?",a:["Elephant","Turtle","Whale","Parrot"],c:1},
+   {q:"How many eyes does a bee have?",a:["2","3","5","100"],c:2},
+   {q:"Which animal can change its color?",a:["Fish","Chameleon","Snake","Scorpion"],c:1},
+   {q:"What is the only flying mammal?",a:["Bird","Bat","Squirrel","Mole"],c:1},
+   {q:"How many toes does a bear have?",a:["4","5","6","8"],c:1},
+   {q:"What is the smartest land animal?",a:["Ape","Elephant","Dolphin","Dog"],c:0},
+ ]},
+};
+
+let quizState={};
+function initQuiz(){
+  const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="q-area">
+    <h3 class="lang-ar">اختر القسم</h3><h3 class="lang-en">Pick a topic</h3>
+    <div class="q-topics" id="quizTopics"></div>
+  </div>`;
+  const tp=document.getElementById('quizTopics');
+  const names={general:{ar:"عام",en:"General"},geo:{ar:"جغرافيا",en:"Geography"},science:{ar:"علوم",en:"Science"},history:{ar:"تاريخ",en:"History"},animals:{ar:"حيوانات",en:"Animals"}};
+  QUIZ_TOPICS.forEach(k=>{
+    const c=document.createElement('div');c.className='topic-chip';c.textContent=names[k][lang==='en'?'en':'ar'];
+    c.onclick=()=>startQuiz(k);
+    tp.appendChild(c);
+  });
+}
+function startQuiz(topic){
+  quizState={topic,idx:0,correct:0};
+  const data=QUIZ[topic][lang==='en'?'en':'ar'];
+  quizState.order=[...data].sort(()=>Math.random()-0.5);
+  showQuizQ();
+}
+function showQuizQ(){
+  const data=quizState.order;
+  const q=data[quizState.idx];
+  const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="q-box">
+    <div class="q-sub">${quizState.topic}</div>
+    <div class="q-text">${q.q}</div>
+    <div class="options" id="quizOpts"></div>
+    <div class="progress"><div style="width:${(quizState.idx/data.length)*100}%"></div></div>
+    <div class="hint" style="margin-top:12px">${quizState.correct}/${data.length}</div>
+  </div>`;
+  const o=document.getElementById('quizOpts');
+  q.a.forEach((ans,i)=>{
+    const b=document.createElement('button');b.className='opt';b.textContent=ans;
+    b.onclick=()=>{ if(b.classList.contains('disabled'))return; b.classList.add('disabled');
+      if(i===q.c){ b.classList.add('correct');quizState.correct++; }
+      else { b.classList.add('wrong'); document.querySelectorAll('.opt')[q.c].classList.add('correct'); }
+      setTimeout(()=>{ quizState.idx++; if(quizState.idx<data.length)showQuizQ(); else quizDone(); },900);
+    };
+    o.appendChild(b);
+  });
+}
+function quizDone(){
+  const area=document.getElementById('gameArea');
+  const total=quizState.order.length;
+  let stars=quizState.correct>=total?3:quizState.correct>=Math.ceil(total/2)?2:quizState.correct>0?1:0;
+  award(stars);
+  area.innerHTML=`<div class="result-panel"><div class="big">${quizState.correct}/${total}</div>
+    <div class="result-msg">${t("أحسنت! نتيجة رائعة","Great job! Nice result")}</div>
+    <div class="small-stars">${starsStr(stars)}</div>
+    <button class="btn mt" onclick="initQuiz()">${t("العودة للأقسام","Back to topics")}</button></div>`;
+}
+
+/* ============ MATH ============ */
+let mathState={};
+function initMath(){
+  mathState={score:0,target:10,ops:['+','-','×'],time:10};
+  mathState.target=10;
+  newMathTarget();
+  renderMath();
+}
+function newMathTarget(){
+  const a=Math.floor(Math.random()*9)+2,b=Math.floor(Math.random()*9)+2;
+  const op=mathState.ops[Math.floor(Math.random()*mathState.ops.length)];
+  let ans; if(op==='+')ans=a+b; else if(op==='-'){ /* ensure positive */ }
+  if(op==='+')ans=a+b; else if(op==='-')ans=Math.max(a,b)-Math.min(a,b); else ans=a*b;
+  mathState.nums=[a,b];mathState.op=op;mathState.ans=Math.max(ans,1);
+  return ans;
+}
+function renderMath(){
+  const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="q-area">
+    <div class="score-pill" style="display:inline-block;margin-bottom:4px">⭐ <b>${mathState.score}</b> / ${mathState.target}</div>
+    <div class="progress" style="max-width:300px;margin:0 auto 10px"><div style="width:${(mathState.score/mathState.target)*100}%"></div></div>
+    <div class="timer" id="mathTimer"><span id="mathTime">10</span> ⏱️</div>
+    <div class="target-display">${mathState.nums[0]} ${mathState.op} ${mathState.nums[1]} = ?</div>
+    <div class="num-grid" id="mathGrid"></div>
+    <button class="btn blue mt" onclick="initMath()">${t("جولة جديدة","New round")}</button>
+  </div>`;
+  const g=document.getElementById('mathGrid');
+  const opts=[mathState.ans, mathState.ans+Math.floor(Math.random()*3)+1, mathState.ans-Math.floor(Math.random()*3)-1, mathState.ans+Math.floor(Math.random()*5)+3];
+  const clean=[...new Set(opts.map(v=>Math.max(v,1)))];
+  while(clean.length<4){ clean.push(Math.floor(Math.random()*30)+1); }
+  clean.sort(()=>Math.random()-0.5).slice(0,4).forEach((v,i)=>{
+    const tile=document.createElement('div');tile.className='tile';tile.textContent=v;
+    tile.onclick=()=>{
+      if(mathState.over)return;
+      mathState.over=true;
+      clearInterval(mathState.timer);
+      if(v===mathState.ans){ mathState.score++; tile.style.background='#22c55e'; toast(t("صح!","Correct!")); }
+      else { tile.style.background='#ef4444'; toast(t("خطأ","Wrong")); }
+      nextMath();
+    };
+    g.appendChild(tile);
+  });
+  startMathTimer();
+}
+function startMathTimer(){
+  mathState.time=10;
+  mathState.over=false;
+  const el=document.getElementById('mathTime');
+  if(!el){ return; }
+  el.textContent=mathState.time;
+  mathState.timer=setInterval(()=>{
+    mathState.time--;
+    const e=document.getElementById('mathTime');
+    if(e)e.textContent=mathState.time;
+    document.getElementById('mathTimer').style.color = mathState.time<=3 ? '#ef4444' : '';
+    if(mathState.time<=0){ clearInterval(mathState.timer); if(!mathState.over){ mathState.over=true; toast(t("انتهى الوقت!","Time's up!")); nextMath(); } }
+  },1000);
+}
+function nextMath(){
+  if(mathState.score>=mathState.target){
+    const stars=3; award(stars);
+    const area=document.getElementById('gameArea');
+    setTimeout(()=>{ area.innerHTML=`<div class="result-panel"><div class="big">🎉</div><div class="result-msg">${t("مبروك! وصلت لـ 10","Congrats! You reached 10")}</div><div class="small-stars">${starsStr(stars)}</div><button class="btn mt" onclick="initMath()">${t("العب مجدداً","Play again")}</button></div>`; },500);
+    return;
+  }
+  setTimeout(()=>{ mathState.target=10; newMathTarget(); renderMath(); },500);
+}
+
+/* ============ MEMORY ============ */
+let memState={};
+function initMemory(){
+  const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="q-area">
+    <h3>🧠</h3>
+    <div class="q-topics" id="memLevels"></div>
+  </div>`;
+  const g=document.getElementById('memLevels');
+  const levels=[{id:"easy",ar:"سهل",en:"Easy",pairs:3},{id:"medium",ar:"متوسط",en:"Medium",pairs:6},{id:"hard",ar:"صعب",en:"Hard",pairs:10}];
+  levels.forEach(l=>{
+    const c=document.createElement('div');c.className='topic-chip';c.textContent=(lang==='en'?l.en:l.ar)+` (${l.pairs*2})`;
+    c.onclick=()=>startMemory(l.id);
+    g.appendChild(c);
+  });
+}
+function startMemory(level){
+  const allEmojis=['🍎','🚗','🐶','🌟','🎈','🌈','⚽','🦋','🚀','🍕','🐬','🎁','🐱','🍉','🎵','🍄','🦊','🌻','🚢','🍩'];
+  const pairs = level==='easy'?3 : level==='medium'?6 : 10;
+  const ems=allEmojis.sort(()=>Math.random()-0.5).slice(0,pairs);
+  memState={matches:0,pairs,first:null,lock:false,level};
+  const cards=[...ems,...ems].sort(()=>Math.random()-0.5);
+  const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="q-area"><div class="score-pill" style="display:inline-block;margin-bottom:20px">🧠 <b id="memCount">0/${pairs}</b></div>
+    <div class="hint">${t("اطلب الخانات المتشابهة","Match the pairs")} | ${t("المستوى","Level")}: ${lang==='en'?level:({easy:"سهل",medium:"متوسط",hard:"صعب"})[level]}</div>
+    <div id="memoryGrid" style="grid-template-columns:repeat(${pairs<=4?4:5},1fr)"></div></div>`;
+  const g=document.getElementById('memoryGrid');
+  cards.forEach((em,i)=>{
+    const c=document.createElement('div');c.className='card';c.dataset.em=em;
+    c.style.fontSize = pairs>8 ? '1.4rem' : '1.9rem';
+    c.onclick=()=>flipCard(c,em);
+    g.appendChild(c);
+  });
+}
+function flipCard(c,em){
+  if(memState.lock||c.classList.contains('flip')||c.classList.contains('matched'))return;
+  c.textContent=em;c.classList.add('flip');
+  if(!memState.first){ memState.first={c,em}; return; }
+  const f=memState.first; memState.first=null; memState.lock=true;
+  if(f.em===em){ setTimeout(()=>{
+      f.c.classList.add('matched');c.classList.add('matched');memState.matches++;memState.lock=false;
+      document.getElementById('memCount').textContent=memState.matches+'/'+memState.pairs;
+      if(memState.matches===memState.pairs) memDone();
+    },350);
+  } else { setTimeout(()=>{
+      f.c.classList.remove('flip');c.classList.remove('flip');f.c.textContent='';c.textContent='';memState.lock=false;
+    },700);
+  }
+}
+function memDone(){
+  const stars=3; award(stars);
+  document.getElementById('gameArea').innerHTML=`<div class="result-panel">
+    <div class="big">🎉</div><div class="result-msg">${t("مبروك! أنهيت الذاكرة","Congrats! Memory cleared")}</div>
+    <div class="small-stars">${starsStr(stars)}</div>
+    <button class="btn mt" onclick="initMemory()">${t("العب مجدداً","Play again")}</button></div>`;
+}
+
+/* ============ GUESS WORD (Hangman) ============ */
+let hangState={};
+const HANG_WORDS={
+  ar:{
+    easy:["هاتف","قمح","شمس","عسل","مفتاح","قمر","بحر","ورق"],
+    medium:["مدرسة","حديقة","سفينة","نجمة","مدينة","مصباح","كتاب","جمل"],
+    hard:["متحف","مستشفى","قارورة","قمر صناعي","مطبخ","فاكهة","قرطاسية","طائرة"]
+  },
+  en:{
+    easy:["php","moon","star","tree","book","bird","sun","fish"],
+    medium:["school","garden","train","phone","cloud","river","apple","house"],
+    hard:["restaurant","university","umbrella","keyboard","mountain","library","bicycle","elephant"]
+  }
+};
+const HANG_MAX={easy:8,medium:6,hard:4};
+function initHangman(){
+  const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="q-area">
+    <h3>🖊️ ${t("خمن الكلمة","Guess the word")}</h3>
+    <div class="q-topics" id="hangLevels"></div>
+  </div>`;
+  const g=document.getElementById('hangLevels');
+  const levels=[{id:"easy",ar:"سهل",en:"Easy"},{id:"medium",ar:"متوسط",en:"Medium"},{id:"hard",ar:"صعب",en:"Hard"}];
+  levels.forEach(l=>{
+    const c=document.createElement('div');c.className='topic-chip';c.textContent=lang==='en'?l.en:l.ar;
+    c.onclick=()=>startHang(l.id);
+    g.appendChild(c);
+  });
+}
+function startHang(level){
+  hangState={level,guessed:new Set(),wrong:0,usedHelp:false,revealCount:1};
+  const list=HANG_WORDS[lang==='en'?'en':'ar'][level];
+  hangState.word=list[Math.floor(Math.random()*list.length)];
+  hangState.firstLetter=hangState.word[0];
+  hangState.guessed.add(hangState.word[0]);
+  renderHang();
+}
+function renderHang(){
+  const area=document.getElementById('gameArea');
+  const maxWrong=HANG_MAX[hangState.level];
+  const shown=hangState.word.split('').map(ch=>hangState.guessed.has(ch)?ch:'_').join(' ');
+  const done=!shown.includes('_');
+  const lost=hangState.wrong>=maxWrong;
+  let body=lang==='en'?'ENGLISH':'العربية';
+  area.innerHTML=`<div class="q-area">
+    <div class="hint">${t("المستوى","Level")}: <b>${lang==='en'?hangState.level:({easy:"سهل",medium:"متوسط",hard:"صعب"})[hangState.level]}</b></div>
+    <div class="word-box">${shown}</div>
+    <div class="hint">🔠 ${t("أول حرف","First letter")}: <b>${hangState.firstLetter}</b></div>
+    <div class="hint">${t("محاولات خاطئة","Wrong tries")}: ${hangState.wrong}/${maxWrong} | ${t("الحروف المستخدمة","Used")}: ${[...hangState.guessed].join(' ')||'-'}</div>
+    <div class="center mt" style="margin-bottom:12px">
+      <button class="btn pink" onclick="hangHelp()" ${hangState.usedHelp?'style="opacity:.5;pointer-events:none"':''}>💡 ${t("مساعدة","Hint")} (${t("1 فوز","1 win")})</button>
+    </div>
+    <div id="hangKeys"></div>
+    <div class="result-msg" id="hangResult"></div>
+  </div>`;
+  const keys=document.getElementById('hangKeys');
+  const letters=lang==='en'?'ABCDEFGHIJKLMNOPQRSTUVWXYZ':'ابتثجحخدذرزسشصضطظعغفقكلمنهوي';
+  letters.split('').forEach(ch=>{
+    const b=document.createElement('button');b.className='opt';b.style.display='inline-block';b.style.width='auto';b.style.padding='8px 12px';b.style.margin='3px';
+    b.textContent=ch;
+    if(hangState.guessed.has(ch)){ b.classList.add('disabled'); b.style.opacity='.4'; }
+    b.onclick=()=>{
+      if(hangState.guessed.has(ch)||done||lost)return;
+      hangState.guessed.add(ch);
+      if(!hangState.word.includes(ch))hangState.wrong++;
+      renderHang();
+    };
+    keys.appendChild(b);
+  });
+  if(done)hangWin();
+  if(lost){ document.getElementById('hangResult').innerHTML=`<div class="big">💀</div><div>${t("الكلمة هي","The word was")}: <b>${hangState.word}</b></div>`; award(0); }
+}
+function hangHelp(){
+  if(hangState.usedHelp)return;
+  hangState.usedHelp=true;
+  deductWin(); // using a hint costs 1 win
+  toast(t("المساعدة كلفتك فوز واحد (-1)","Hint cost you 1 win (-1)"));
+  for(const ch of hangState.word){ if(!hangState.guessed.has(ch)){ hangState.guessed.add(ch); break; } }
+  renderHang();
+}
+function hangWin(){
+  award(3);
+  document.getElementById('hangResult').innerHTML=`<div class="big">🎉</div><div class="small-stars">${starsStr(3)}</div><button class="btn blue mt" onclick="initHangman()">${t("كلمة جديدة","New word")}</button>`;
+}
+
+/* ============ ROCK PAPER SCISSORS ============ */
+let rockState={};
+function initRock(){
+  rockState={won:0,played:0};
+  renderRock();
+}
+function renderRock(){
+  const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="q-area">
+    <h3>✂️ 📄 🪨</h3>
+    <div class="rock" id="rockSlots">
+      <div class="slot" id="rockCpu">❔</div>
+      <div class="slot" style="border-style:solid">VS</div>
+      <div class="slot" id="rockYou">❔</div>
+    </div>
+    <div class="feedback" id="rockMsg"></div>
+    <div class="stat-row">${t("فوزك","Your wins")}: <b>${rockState.won}</b> | ${t("الجولات","Rounds")}: <b>${rockState.played}</b></div>
+    <div class="center mt">
+      <button class="opt" style="display:inline-block;width:auto;padding:12px 18px;margin:3px" onclick="playRock('🪨')">🪨</button>
+      <button class="opt" style="display:inline-block;width:auto;padding:12px 18px;margin:3px" onclick="playRock('📄')">📄</button>
+      <button class="opt" style="display:inline-block;width:auto;padding:12px 18px;margin:3px" onclick="playRock('✂️')">✂️</button>
+    </div>
+  </div>`;
+}
+function playRock(you){
+  const c=['🪨','📄','✂️'][Math.floor(Math.random()*3)];
+  document.getElementById('rockCpu').textContent=c;
+  document.getElementById('rockYou').textContent=you;
+  rockState.played++;
+  const msg=document.getElementById('rockMsg');
+  if(you===c){ msg.textContent=t("تعادل!","Draw!"); msg.style.color='#ffd700'; }
+  else if((you==='🪨'&&c==='✂️')||(you==='📄'&&c==='🪨')||(you==='✂️'&&c==='📄')){ rockState.won++; msg.textContent=t("فزت! 🎉","You win! 🎉"); msg.style.color='#22c55e'; }
+  else { msg.textContent=t("خسرت","You lose"); msg.style.color='#ef4444'; }
+  if(rockState.won>=5){ award(3);
+    setTimeout(()=>{ document.getElementById('gameArea').innerHTML=`<div class="result-panel"><div class="big">🏆</div><div class="small-stars">${starsStr(3)}</div><button class="btn mt" onclick="initRock()">${t("العب مجدداً","Play again")}</button></div>`; },800);
+  }
+}
+
+/* ============ COLOR MATCH ============ */
+let colorState={};
+const COLORS=['red','blue','green','yellow','purple','orange'];
+const COL_N={ar:{red:'أحمر',blue:'أزرق',green:'أخضر',yellow:'أصفر',purple:'بنفسجي',orange:'برتقالي'},en:{red:'Red',blue:'Blue',green:'Green',yellow:'Yellow',purple:'Purple',orange:'Orange'}};
+function initColor(){ colorState={score:0,target:6}; renderColor(); }
+function renderColor(){
+  const area=document.getElementById('gameArea');
+  const all=['red','blue','green','yellow','purple','orange'];
+  const pick=[0,1,2,3,4,5].sort(()=>Math.random()-0.5).slice(0,3);
+  const pad=pick.map(i=>all[i]);
+  const word=pad[Math.floor(Math.random()*pad.length)];
+  const shown=COL_N[lang==='en'?'en':'ar'][word];
+  const wrongColor=pad[(pad.indexOf(word)+1)%pad.length];
+  const target=[word,wrongColor][Math.floor(Math.random()*2)];
+  area.innerHTML=`<div class="q-area">
+    <div class="score-pill" style="display:inline-block;margin-bottom:20px">⭐ <b>${colorState.score}/${colorState.target}</b></div>
+    <div class="target-display" style="font-size:2.5rem;color:${target}">${shown}</div>
+    <div class="hint">${t("اضغط على اللون الذي يمثل الكلمة","Tap the color that matches the word")}</div>
+    <div class="color-pad" id="colorPad"></div>
+    <div class="feedback" id="colorMsg"></div>
+  </div>`;
+  const g=document.getElementById('colorPad');
+  pad.forEach(c=>{
+    const d=document.createElement('div');d.className='cp';d.style.background=c;
+    d.onclick=()=>{ if(d.classList.contains('disabled'))return;
+      if(c===word){ colorState.score++; colorMsg.textContent=t("صح!","Correct!");colorMsg.style.color='#22c55e'; }
+      else { colorMsg.textContent=t("خطأ","Wrong");colorMsg.style.color='#ef4444'; }
+      if(colorState.score>=colorState.target){ award(3); setTimeout(()=>{ area.innerHTML=`<div class="result-panel"><div class="big">🎉</div><div class="small-stars">${starsStr(3)}</div><button class="btn mt" onclick="initColor()">${t("العب مجدداً","Play again")}</button></div>`; },600); return; }
+      setTimeout(()=>renderColor(),500);
+    };
+    g.appendChild(d);
+  });
+}
+
+/* ============ CAPITALS ============ */
+let capState={};
+const CAPITALS=[
+  {c:"السعودية",en:"Saudi Arabia",a:"الرياض",ena:"Riyadh"},
+  {c:"مصر",en:"Egypt",a:"القاهرة",ena:"Cairo"},
+  {c:"فرنسا",en:"France",a:"باريس",ena:"Paris"},
+  {c:"اليابان",en:"Japan",a:"طوكيو",ena:"Tokyo"},
+  {c:"أمريكا",en:"USA",a:"واشنطن",ena:"Washington"},
+  {c:"الصين",en:"China",a:"بكين",ena:"Beijing"},
+  {c:"اليونان",en:"Greece",a:"أثينا",ena:"Athens"},
+  {c:"أستراليا",en:"Australia",a:"كانبرا",ena:"Canberra"},
+  {c:"المكسيك",en:"Mexico",a:"مكسيكو سيتي",ena:"Mexico City"},
+  {c:"الهند",en:"India",a:"نيودلهي",ena:"New Delhi"},
+  {c:"الأردن",en:"Jordan",a:"عمّان",ena:"Amman"},
+  {c:"الإمارات",en:"UAE",a:"أبوظبي",ena:"Abu Dhabi"},
+  {c:"ألمانيا",en:"Germany",a:"برلين",ena:"Berlin"},
+  {c:"البرازيل",en:"Brazil",a:"برازيليا",ena:"Brasilia"},
+  {c:"إسبانيا",en:"Spain",a:"مدريد",ena:"Madrid"},
+  {c:"إيطاليا",en:"Italy",a:"روما",ena:"Rome"},
+];
+function initSeq(){
+  const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="q-area">
+    <h3>🏛️ ${t("عواصم الدول","Country Capitals")}</h3>
+    <div class="q-topics" id="capLevels"></div>
+  </div>`;
+  const g=document.getElementById('capLevels');
+  const levels=[{id:"easy",ar:"سهل",en:"Easy"},{id:"medium",ar:"متوسط",en:"Medium"},{id:"hard",ar:"صعب",en:"Hard"}];
+  levels.forEach(l=>{
+    const c=document.createElement('div');c.className='topic-chip';c.textContent=lang==='en'?l.en:l.ar;
+    c.onclick=()=>startCapitals(l.id);
+    g.appendChild(c);
+  });
+}
+function startCapitals(level){
+  capState={level,stage:1,correct:0,opt:level==='easy'?4:level==='medium'?6:8};
+  renderCapitals();
+}
+function renderCapitals(){
+  const area=document.getElementById('gameArea');
+  const q=CAPITALS[Math.floor(Math.random()*CAPITALS.length)];
+  capState.answer=q;
+  area.innerHTML=`<div class="q-area">
+    <div class="score-pill" style="display:inline-block;margin-bottom:12px">✅ <b>${capState.correct}</b>/10 | ${t("مرحلة","Stage")} ${capState.stage}/10 | ${t("المستوى","Level")}: ${lang==='en'?capState.level:({easy:"سهل",medium:"متوسط",hard:"صعب"})[capState.level]}</div>
+    <div class="target-display" style="font-size:1.9rem">🌍 ${lang==='en'?q.en:q.c}</div>
+    <div class="hint">${t("ما هي عاصمة هذه الدولة؟","What is the capital of this country?")}</div>
+    <div id="capOpts" class="options" style="max-width:340px"></div>
+    <div class="feedback" id="capMsg"></div>
+    <button class="btn blue mt" onclick="initSeq()">${t("المستويات","Levels")}</button>
+  </div>`;
+  const answers=[q,...CAPITALS.filter(x=>x!==q).sort(()=>Math.random()-0.5).slice(0,capState.opt-1)].sort(()=>Math.random()-0.5);
+  const g=document.getElementById('capOpts');
+  answers.forEach(x=>{
+    const b=document.createElement('button');b.className='opt';b.textContent=lang==='en'?x.ena:x.a;
+    b.onclick=()=>{ if(b.classList.contains('disabled'))return; b.classList.add('disabled');
+      if(x===capState.answer){ b.classList.add('correct'); capState.correct++;
+        document.getElementById('capMsg').textContent=t("صح! 🎉","Correct! 🎉");document.getElementById('capMsg').style.color='#22c55e';
+      } else { b.classList.add('wrong'); document.querySelectorAll('#capOpts .opt')[answers.indexOf(capState.answer)].classList.add('correct');
+        document.getElementById('capMsg').textContent=(lang==='en'?capState.answer.ena:capState.answer.a); document.getElementById('capMsg').style.color='#ef4444';
+      }
+      if(capState.stage>=10){ award(3);
+        setTimeout(()=>{ document.getElementById('gameArea').innerHTML=`<div class="result-panel"><div class="big">🏛️</div><div class="result-msg">${t("مبروك! أنهيت العشرة مراحل","Congrats! You finished all 10 stages")}</div><div class="small-stars">${starsStr(3)}</div><button class="btn mt" onclick="initSeq()">${t("العب مجدداً","Play again")}</button></div>`; },600);
+        return;
+      }
+      capState.stage++; setTimeout(renderCapitals,800);
+    };
+    g.appendChild(b);
+  });
+}
+
+/* ============ TIC TAC TOE ============ */
+let t3={}
+function initT3(){
+  const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="q-area">
+    <h3>⭕ ❌</h3>
+    <div class="q-topics" id="t3Levels"></div>
+  </div>`;
+  const g=document.getElementById('t3Levels');
+  const levels=[{id:"easy",ar:"سهل",en:"Easy"},{id:"medium",ar:"متوسط",en:"Medium"},{id:"hard",ar:"صعب",en:"Hard"}];
+  levels.forEach(l=>{
+    const c=document.createElement('div');c.className='topic-chip';c.textContent=lang==='en'?l.en:l.ar;
+    c.onclick=()=>startT3(l.id);
+    g.appendChild(c);
+  });
+}
+function startT3(level){
+  t3={board:Array(9).fill(null),turn:'X',over:false,level};
+  renderT3();
+}
+function renderT3(){
+  const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="q-area"><h3>⭕ ❌ <span style="font-size:.9rem;color:var(--sub)">(${lang==='en'?t3.level:({easy:"سهل",medium:"متوسط",hard:"صعب"})[t3.level]})</span></h3>
+    <div class="grid" id="t3Grid" style="grid-template-columns:repeat(3,1fr);max-width:320px;grid-auto-rows:auto"></div>
+    <div class="feedback" id="t3Msg">${t("دورك","Your turn")}: X</div>
+    <button class="btn blue mt" onclick="initT3()">${t("المستويات","Levels")}</button></div>`;
+  const g=document.getElementById('t3Grid');
+  for(let i=0;i<9;i++){
+    const c=document.createElement('div');c.className='card';c.dataset.i=i;c.style.fontSize='2.4rem';
+    c.onclick=()=>t3Play(i,c);
+    g.appendChild(c);
+  }
+}
+function t3Play(i,c){
+  if(t3.over||t3.board[i])return;
+  t3.board[i]='X';c.textContent='X';
+  if(checkT3('X')){ t3.over=true;t3Win();return; }
+  if(t3.board.every(x=>x)){ t3.over=true;document.getElementById('t3Msg').textContent=t("تعادل!","Draw!");award(2);return; }
+  setTimeout(()=>cpuMove(),250);
+}
+function cpuMove(){
+  const empty=t3.board.map((v,idx)=>v===null?idx:null).filter(v=>v!==null);
+  if(empty.length===0)return;
+  let move;
+  if(t3.level==='easy'){ move=empty[Math.floor(Math.random()*empty.length)]; }
+  else if(t3.level==='medium'){
+    move = findWinningT3('O')!==null ? findWinningT3('O') : findWinningT3('X')!==null ? findWinningT3('X') : (empty.includes(4)?4:empty[Math.floor(Math.random()*empty.length)]);
+  }
+  else if(t3.level==='hard'){
+    const result=bestMove('O'); move=result!==null?result:empty[0];
+  }
+  t3.board[move]='O';document.querySelector(`#t3Grid .card[data-i="${move}"]`).textContent='O';
+  if(checkT3('O')){ t3.over=true;t3Lose();return; }
+  if(t3.board.every(x=>x)){ t3.over=true;document.getElementById('t3Msg').textContent=t("تعادل!","Draw!");award(2); }
+}
+function bestMove(p){
+  const w=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  // win
+  for(const l of w){ const vals=l.map(x=>t3.board[x]); if(vals.filter(v=>v===p).length===2&&vals.includes(null)){ return l[vals.indexOf(null)]; } }
+  // block
+  const opp=p==='O'?'X':'O';
+  for(const l of w){ const vals=l.map(x=>t3.board[x]); if(vals.filter(v=>v===opp).length===2&&vals.includes(null)){ return l[vals.indexOf(null)]; } }
+  // center
+  if(t3.board[4]===null)return 4;
+  // corners
+  const corners=[0,2,6,8].filter(i=>t3.board[i]===null);
+  if(corners.length)return corners[Math.floor(Math.random()*corners.length)];
+  return t3.board.map((v,i)=>v===null?i:null).find(v=>v!==null);
+}
+function findWinningT3(p){
+  const b=t3.board,w=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  for(const l of w){ const vals=l.map(x=>b[x]); if(vals.filter(v=>v===p).length===2&&vals.includes(null)){ return l[vals.indexOf(null)]; } }
+  return null;
+}
+function checkT3(p){
+  const b=t3.board,w=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  return w.some(l=>l.every(i=>b[i]===p));
+}
+function t3Win(){ document.getElementById('t3Msg').textContent=t("فزت! 🎉","You win! 🎉");document.getElementById('t3Msg').style.color='#22c55e';award(3); }
+function t3Lose(){ document.getElementById('t3Msg').textContent=t("خسرت","You lose");document.getElementById('t3Msg').style.color='#ef4444';award(1); }
+
+/* ============ GUESS NUMBER ============ */
+let guessState={}
+function initGuess(){
+  guessState={num:Math.floor(Math.random()*100)+1,tries:0,min:1,max:100,time:10,over:false};
+  renderGuess();
+}
+function renderGuess(){
+  const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="q-area">
+    <div class="timer" id="guessTimer"><span id="guessTime">10</span> ⏱️</div>
+    <div class="target-display">❓ ${guessState.min} - ${guessState.max}</div>
+    <div class="hint">${t("خمن الرقم السري من 1 إلى 100","Guess the secret number from 1 to 100")}</div>
+    <input type="number" id="guessIn" placeholder="?" min="1" max="100">
+    <div class="center"><button class="btn mt" onclick="tryGuess()">${t("خمن","Guess")}</button></div>
+    <div class="feedback" id="guessMsg"></div>
+    <div class="hint">${t("محاولات","Tries")}: <b id="guessTries">0</b></div>
+  </div>`;
+  document.getElementById('guessIn').addEventListener('keydown',e=>{ if(e.key==='Enter')tryGuess(); });
+  document.getElementById('guessIn').focus();
+  startGuessTimer();
+}
+function startGuessTimer(){
+  if(guessState.timer)clearInterval(guessState.timer);
+  guessState.time=10;
+  guessState.over=false;
+  const el=document.getElementById('guessTime');
+  if(!el)return;
+  el.textContent=guessState.time;
+  guessState.timer=setInterval(()=>{
+    guessState.time--;
+    const e=document.getElementById('guessTime');
+    if(e)e.textContent=Math.max(guessState.time,0);
+    const g=document.getElementById('guessTimer');
+    if(g)g.style.color=guessState.time<=3?'#ef4444':'';
+    if(guessState.time<=0){ clearInterval(guessState.timer); guessState.timer=null; if(!guessState.over){ guessState.over=true; guessLose(); } }
+  },1000);
+}
+function guessLose(){
+  clearInterval(guessState.timer); guessState.timer=null;
+  const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="result-panel"><div class="big">⏱️</div><div class="result-msg">${t("انتهى الوقت!","Time's up!")}</div><div class="small-stars">${starsStr(0)}</div><button class="btn mt" onclick="initGuess()">${t("العب مجدداً","Play again")}</button></div>`;
+  award(0);
+}
+function tryGuess(){
+  if(guessState.over)return;
+  const inp=document.getElementById('guessIn');
+  const v=parseInt(inp.value);
+  const msg=document.getElementById('guessMsg');
+  if(isNaN(v))return;
+  guessState.tries++;
+  document.getElementById('guessTries').textContent=guessState.tries;
+  if(v===guessState.num){ msg.textContent=t("🎉 فزت!","🎉 You got it!");msg.style.color='#22c55e';
+    clearInterval(guessState.timer); guessState.timer=null; if(guessState)guessState.over=true;
+    let stars=guessState.tries<=6?3:guessState.tries<=10?2:1; aword2(stars);
+    setTimeout(()=>{ document.getElementById('gameArea').innerHTML=`<div class="result-panel"><div class="big">🎉</div><div class="small-stars">${starsStr(stars)}</div><button class="btn mt" onclick="initGuess()">${t("العب مجدداً","Play again")}</button></div>`; },600);
+    return;
+  }
+  if(v<guessState.num){ guessState.min=Math.max(guessState.min,v+1); msg.textContent=t("أكبر!","Higher!"); }
+  else { guessState.max=Math.min(guessState.max,v-1); msg.textContent=t("أصغر!","Lower!"); }
+  msg.style.color='#ffd700';
+  document.getElementById('guessTries').textContent=guessState.tries;
+  startGuessTimer();
+}
+function aword2(s){ award(s); }
+
+/* ============ GUESS COUNTRY ============ */
+let countryState={};
+const COUNTRIES=[
+  /* ===== EASY ===== */
+  {ar:"السعودية",en:"Saudi Arabia",code:"sa",lvl:"easy",cl:["🕌","🐪","🛢️"]},
+  {ar:"مصر",en:"Egypt",code:"eg",lvl:"easy",cl:["🔺","🐫","🏛️"]},
+  {ar:"أمريكا",en:"USA",code:"us",lvl:"easy",cl:["🗽","🦅","🍔"]},
+  {ar:"بريطانيا",en:"United Kingdom",code:"gb",lvl:"easy",cl:["👑","🍵","💂"]},
+  {ar:"فرنسا",en:"France",code:"fr",lvl:"easy",cl:["🗼","🥐","🎨"]},
+  {ar:"ألمانيا",en:"Germany",code:"de",lvl:"easy",cl:["🍺","🚗","🏰"]},
+  {ar:"إيطاليا",en:"Italy",code:"it",lvl:"easy",cl:["🍕","🏛️","🍝"]},
+  {ar:"إسبانيا",en:"Spain",code:"es",lvl:"easy",cl:["💃","🥘","🎶"]},
+  {ar:"اليابان",en:"Japan",code:"jp",lvl:"easy",cl:["🌸","🍣","🗾"]},
+  {ar:"الصين",en:"China",code:"cn",lvl:"easy",cl:["🐉","🏯","🎋"]},
+  {ar:"الهند",en:"India",code:"in",lvl:"easy",cl:["🐘","🛕","🥘"]},
+  {ar:"أستراليا",en:"Australia",code:"au",lvl:"easy",cl:["🦘","🐨","🏏"]},
+  {ar:"كندا",en:"Canada",code:"ca",lvl:"easy",cl:["🍁","❄️","🏒"]},
+  {ar:"روسيا",en:"Russia",code:"ru",lvl:"easy",cl:["🐻","❄️","🏛️"]},
+  {ar:"البرازيل",en:"Brazil",code:"br",lvl:"easy",cl:["🦜","⚽","☀️"]},
+  {ar:"تركيا",en:"Turkey",code:"tr",lvl:"easy",cl:["🕌","🇹🇷","☕"]},
+  /* ===== MEDIUM ===== */
+  {ar:"المكسيك",en:"Mexico",code:"mx",lvl:"medium",cl:["🌮","🎩","🌵"]},
+  {ar:"الأرجنتين",en:"Argentina",code:"ar",lvl:"medium",cl:["⚽","🥩","💃"]},
+  {ar:"السويد",en:"Sweden",code:"se",lvl:"medium",cl:["🦌","🏳️","🔵"]},
+  {ar:"النرويج",en:"Norway",code:"no",lvl:"medium",cl:["⛷️","🌊","🎄"]},
+  {ar:"سويسرا",en:"Switzerland",code:"ch",lvl:"medium",cl:["🏔️","⏰","🍫"]},
+  {ar:"النمسا",en:"Austria",code:"at",lvl:"medium",cl:["⛰️","🎻","❄️"]},
+  {ar:"بلجيكا",en:"Belgium",code:"be",lvl:"medium",cl:["🍟","🔴","⚽"]},
+  {ar:"هولندا",en:"Netherlands",code:"nl",lvl:"medium",cl:["🌷","🧀","🚲"]},
+  {ar:"اليونان",en:"Greece",code:"gr",lvl:"medium",cl:["🏛️","🫒","🏖️"]},
+  {ar:"البرتغال",en:"Portugal",code:"pt",lvl:"medium",cl:["🌊","⚽","🎻"]},
+  {ar:"كوريا الجنوبية",en:"South Korea",code:"kr",lvl:"medium",cl:["🌸","🎬","🍜"]},
+  {ar:"تايلاند",en:"Thailand",code:"th",lvl:"medium",cl:["🐘","🏖️","🍛"]},
+  {ar:"أندونيسيا",en:"Indonesia",code:"id",lvl:"medium",cl:["🏝️","🐲","🌋"]},
+  {ar:"ماليزيا",en:"Malaysia",code:"my",lvl:"medium",cl:["🏙️","🐅","🍛"]},
+  {ar:"المغرب",en:"Morocco",code:"ma",lvl:"medium",cl:["🏛️","🐪","🌴"]},
+  {ar:"الجزائر",en:"Algeria",code:"dz",lvl:"medium",cl:["🏜️","🐪","☪️"]},
+  {ar:"الأردن",en:"Jordan",code:"jo",lvl:"medium",cl:["🏛️","🏜️","🪖"]},
+  {ar:"قطر",en:"Qatar",code:"qa",lvl:"medium",cl:["🏙️","🎓","🛢️"]},
+  {ar:"الكويت",en:"Kuwait",code:"kw",lvl:"medium",cl:["🛢️","🏙️","🌊"]},
+  {ar:"بولندا",en:"Poland",code:"pl",lvl:"medium",cl:["🐦","🏰","❄️"]},
+  /* ===== HARD ===== */
+  {ar:"تشاد",en:"Chad",code:"td",lvl:"hard",cl:["🏜️","🦒","🌋"]},
+  {ar:"رومانيا",en:"Romania",code:"ro",lvl:"hard",cl:["🏰","🐻","🌻"]},
+  {ar:"مالي",en:"Mali",code:"ml",lvl:"hard",cl:["🏜️","🐫","🎨"]},
+  {ar:"غينيا",en:"Guinea",code:"gn",lvl:"hard",cl:["🌴","🐒","⛰️"]},
+  {ar:"سلوفينيا",en:"Slovenia",code:"si",lvl:"hard",cl:["⛰️","🧊","🏔️"]},
+  {ar:"سلوفاكيا",en:"Slovakia",code:"sk",lvl:"hard",cl:["🏰","⛰️","🌲"]},
+  {ar:"كرواتيا",en:"Croatia",code:"hr",lvl:"hard",cl:["🏖️","♟️","🏰"]},
+  {ar:"لاتفيا",en:"Latvia",code:"lv",lvl:"hard",cl:["🌲","🏳️","🦢"]},
+  {ar:"ليتوانيا",en:"Lithuania",code:"lt",lvl:"hard",cl:["🏰","🌲","🐦"]},
+  {ar:"أوروغواي",en:"Uruguay",code:"uy",lvl:"hard",cl:["⚽","🐂","🐓"]},
+  {ar:"باراغواي",en:"Paraguay",code:"py",lvl:"hard",cl:["🦋","⚽","🌊"]},
+  {ar:"تشيلي",en:"Chile",code:"cl",lvl:"hard",cl:["⛰️","🌶️","🗿"]},
+  {ar:"بيرو",en:"Peru",code:"pe",lvl:"hard",cl:["🐪","🗿","🌽"]},
+  {ar:"تنزانيا",en:"Tanzania",code:"tz",lvl:"hard",cl:["🦁","🗻","🌅"]},
+  {ar:"بوتسوانا",en:"Botswana",code:"bw",lvl:"hard",cl:["🐘","🌵","🦓"]},
+  {ar:"زيمبابوي",en:"Zimbabwe",code:"zw",lvl:"hard",cl:["🦁","🌋","🕊️"]},
+  {ar:"ليسوتو",en:"Lesotho",code:"ls",lvl:"hard",cl:["🏔️","🎩","🐑"]},
+  {ar:"بوتان",en:"Bhutan",code:"bt",lvl:"hard",cl:["🐉","🏔️","🕌"]},
+  {ar:"ميانمار",en:"Myanmar",code:"mm",lvl:"hard",cl:["🕌","🐘","🌾"]},
+  {ar:"منغوليا",en:"Mongolia",code:"mn",lvl:"hard",cl:["🐎","🏜️","⛺"]},
+  {ar:"قرغيزستان",en:"Kyrgyzstan",code:"kg",lvl:"hard",cl:["⛰️","🐴","🌊"]},
+  {ar:"طاجيكستان",en:"Tajikistan",code:"tj",lvl:"hard",cl:["⛰️","🐴","👑"]},
+];
+function initSlots(){
+  const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="q-area">
+    <h3>🌍 ${t("خمن الدولة","Guess the country")}</h3>
+    <div class="q-topics" id="countryLevels"></div>
+  </div>`;
+  const g=document.getElementById('countryLevels');
+  const levels=[{id:"easy",ar:"سهل",en:"Easy"},{id:"medium",ar:"متوسط",en:"Medium"},{id:"hard",ar:"صعب",en:"Hard"}];
+  levels.forEach(l=>{
+    const c=document.createElement('div');c.className='topic-chip';c.textContent=(lang==='en'?l.en:l.ar);
+    c.onclick=()=>startCountry(l.id);
+    g.appendChild(c);
+  });
+}
+function startCountry(level){
+  const pool=COUNTRIES.filter(x=>x.lvl===level);
+  countryState={wins:0,stage:1,level,need:10,opt:4,pool,used:new Set(),answer:null};
+  renderCountry();
+}
+function renderCountry(){
+  const area=document.getElementById('gameArea');
+  // pick a country from the pool that wasn't used yet
+  let available=countryState.pool.filter(x=>!countryState.used.has(x.code));
+  if(available.length===0){ countryState.used.clear(); available=countryState.pool; }
+  const c=available[Math.floor(Math.random()*available.length)];
+  countryState.used.add(c.code);
+  countryState.answer=c;
+  const clues=c.cl.slice(0,countryState.stage).sort(()=>Math.random()-0.5);
+  area.innerHTML=`<div class="q-area">
+    <div class="score-pill" style="display:inline-block;margin-bottom:12px">✅ <b>${countryState.wins}</b>/10 | ${t("مرحلة","Stage")} ${countryState.stage}/10 | ${t("المستوى","Level")}: ${lang==='en'?countryState.level:({easy:"سهل",medium:"متوسط",hard:"صعب"})[countryState.level]}</div>
+    <div class="flag-box"><img src="https://flagcdn.com/w320/${c.code}.png" alt="flag" onerror="this.onerror=null;this.parentElement.style.display='none'"></div>
+    <div class="target-display" style="font-size:1.8rem;letter-spacing:5px">${clues.join(' ')}</div>
+    <div class="hint">${t("خمن الدولة من العلم","Guess the country from the flag")}</div>
+    <div id="countryOpts" class="options" style="max-width:340px"></div>
+    <div class="feedback" id="countryMsg"></div>
+    <button class="btn blue mt" onclick="initSlots()">${t("المستويات","Levels")}</button>
+  </div>`;
+  // 3 wrong answers from same pool (remove already-used-in-this-question ones but avoid duplicates)
+  const others=countryState.pool.filter(x=>x!==c).sort(()=>Math.random()-0.5).slice(0,3);
+  const answers=[c,...others].sort(()=>Math.random()-0.5);
+  const g=document.getElementById('countryOpts');
+  answers.forEach(x=>{
+    const b=document.createElement('button');b.className='opt';
+    b.textContent=lang==='en'?x.en:x.ar;
+    b.onclick=()=>{ if(b.classList.contains('disabled'))return; b.classList.add('disabled');
+      if(x===countryState.answer){ b.classList.add('correct'); countryState.wins++;
+        document.getElementById('countryMsg').textContent=t("صح! 🎉","Correct! 🎉");document.getElementById('countryMsg').style.color='#22c55e';
+      } else { b.classList.add('wrong'); document.querySelectorAll('#countryOpts .opt')[answers.indexOf(countryState.answer)].classList.add('correct');
+        document.getElementById('countryMsg').textContent=(lang==='en'?countryState.answer.en:countryState.answer.ar); document.getElementById('countryMsg').style.color='#ef4444';
+      }
+      if(countryState.stage>=10){ award(3);
+        setTimeout(()=>{ document.getElementById('gameArea').innerHTML=`<div class="result-panel"><div class="big">🌍</div><div class="result-msg">${t("مبروك! أنهيت العشر مراحل","Congrats! You finished all 10 stages")}</div><div class="small-stars">${starsStr(3)}</div><button class="btn mt" onclick="initSlots()">${t("العب مجدداً","Play again")}</button></div>`; },600);
+        return;
+      }
+      countryState.stage++; setTimeout(renderCountry,800);
+    };
+    g.appendChild(b);
+  });
+}
+
+/* ============ TOAST ============ */
+let toastTimer;
+function toast(m){
+  const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),1400);
+}
+
+/* ============ AUTH & FRIENDS ============ */
+const API = window.location.origin;
+let curUser = null;
+let curScore = { total_score: 0, games_won: 0 };
+let authMode = 'login';
+let authGender = 'male';
+let friendCache = [];
+
+function getToken(){ return localStorage.getItem('fs_token'); }
+
+function api(path, opts){
+  const headers = { 'Content-Type': 'application/json' };
+  const token = getToken();
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  return fetch(API + path, Object.assign({ headers }, opts)).then(r=>r.json());
+}
+
+function switchAuth(m){
+  authMode = m;
+  document.getElementById('loginFields').style.display = m==='login' ? 'block':'none';
+  document.getElementById('regFields').style.display   = m==='register' ? 'block':'none';
+  const tLogin=document.getElementById('tabLogin'), tReg=document.getElementById('tabRegister');
+  tLogin.style.background = m==='login' ? 'linear-gradient(135deg,var(--gold),var(--pink))':'#ffffff14';
+  tReg.style.background   = m==='register' ? 'linear-gradient(135deg,var(--gold),var(--pink))':'#ffffff14';
+  const btn=document.getElementById('authSubmit');
+  btn.innerHTML = m==='register' ? '<span class="lang-ar">إنشاء حساب</span><span class="lang-en">Sign up</span>' : '<span class="lang-ar">دخول</span><span class="lang-en">Login</span>';
+  hideAuthMsg();
+}
+
+function pickGender(g){
+  authGender = g;
+  document.querySelectorAll('.gender-btn').forEach(b=>{
+    const on = b.getAttribute('data-gender')===g;
+    b.style.borderColor = on ? 'var(--gold)' : '#ffffff22';
+    b.style.background  = on ? '#ffd70022' : '#ffffff0d';
+  });
+}
+
+function showAuthMsg(m){ const e=document.getElementById('authMsg'); e.textContent=m; e.style.display='block'; }
+function hideAuthMsg(){ document.getElementById('authMsg').style.display='none'; }
+
+async function submitAuth(){
+  hideAuthMsg();
+  if (authMode==='register'){
+    const username=document.getElementById('regUser').value.trim();
+    const email=document.getElementById('regEmail').value.trim();
+    const password=document.getElementById('regPass').value;
+    if(!username||!password){ showAuthMsg(lang==='en'?'Please fill username and password':'املأ اسم المستخدم وكلمة المرور'); return; }
+    const r=await api('/api/register',{ method:'POST', body:JSON.stringify({username,email,password,gender:authGender}) });
+    if(r.error){ showAuthMsg(r.error==='username-taken'?(lang==='en'?'Username already taken':'الاسم مستخدم'):r.error==='email-taken'?(lang==='en'?'Email already used':'الإيميل مستخدم'):(lang==='en'?'Sign up failed':'فشل إنشاء الحساب')); return; }
+    afterLogin(r);
+  } else {
+    const u=document.getElementById('loginUser').value.trim();
+    const p=document.getElementById('loginPass').value;
+    if(!u||!p){ showAuthMsg(lang==='en'?'Fill your details':'املأ بياناتك'); return; }
+    const r=await api('/api/login',{ method:'POST', body:JSON.stringify({usernameOrEmail:u,password:p}) });
+    if(r.error){ showAuthMsg(lang==='en'?'Wrong username or password':'الاسم أو كلمة المرور غير صحيحة'); return; }
+    afterLogin(r);
+  }
+}
+
+async function guestLogin(){
+  hideAuthMsg();
+  const r=await api('/api/guest',{ method:'POST', body:JSON.stringify({gender:authGender}) });
+  if(r.error){ showAuthMsg(lang==='en'?'Guest login failed':'فشل دخول الضيف'); return; }
+  afterLogin(r);
+}
+
+function afterLogin(r){
+  localStorage.setItem('fs_token', r.token);
+  curUser = r.user;
+  curScore = r.score || { total_score:0, games_won:0 };
+  document.getElementById('authScreen').style.display='none';
+  document.getElementById('friendsBtn').hidden=false;
+  document.getElementById('logoutBtn').hidden=false;
+  const badge=document.getElementById('userBadge');
+  badge.hidden=false;
+  badge.textContent = (curUser.gender==='female'?'👧':'👦') + ' ' + curUser.username;
+  toast(lang==='en'?('Welcome, '+curUser.username):('أهلاً، '+curUser.username));
+  applyLang();
+  updateScore();
+}
+
+function logout(){
+  localStorage.removeItem('fs_token');
+  curUser=null;
+  location.reload();
+}
+
+/* ---- friends ---- */
+function openFriends(){
+  document.getElementById('friendsScreen').style.display='flex';
+  loadFriends();
+}
+function closeFriends(){ document.getElementById('friendsScreen').style.display='none'; }
+
+function loadFriends(){
+  api('/api/friends').then(r=>{
+    friendCache = r.friends || [];
+    renderFriends();
+  });
+}
+
+function renderFriends(){
+  const list=document.getElementById('friendsList');
+  if(!friendCache.length){ list.innerHTML='<div style="color:var(--sub);text-align:center;padding:20px">'+(lang==='en'?'No friends yet. Search and add friends!':'لا يوجد أصدقاء بعد — ابحث وأضف أصدقاءك!')+'</div>'; return; }
+  list.innerHTML = friendCache.map(f=>{
+    const pendingIncoming = f.status==='pending'; // showing from requester's perspective
+    const icon = f.gender==='female'?'👧':'👦';
+    let btn='';
+    if(f.status==='pending'){
+      btn = '<span style="color:var(--gold);font-size:.8rem">'+(lang==='en'?'Pending…':'بانتظار القبول')+'</span>';
+    } else {
+      btn = '<span style="color:#34d399;font-size:.85rem;font-weight:800">✓ '+(lang==='en'?'Friend':'صديق')+'</span>';
+    }
+    return `<div style="display:flex;justify-content:space-between;align-items:center;background:#ffffff10;border:1px solid #ffffff22;border-radius:12px;padding:10px 12px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${f.avatar_color};font-size:1.2rem">${icon}</span>
+        <div><div style="font-weight:800">${f.username}</div><div style="font-size:.75rem;color:var(--sub)">🏆 ${f.total_score}</div></div>
+      </div>
+      <div>${btn}</div>
+    </div>`;
+  }).join('');
+}
+
+function searchUsers(){
+  const q=document.getElementById('searchUser').value.trim();
+  const box=document.getElementById('searchResults');
+  if(q.length<2){ box.innerHTML=''; return; }
+  api('/api/users/search?q='+encodeURIComponent(q)).then(r=>{
+    if(!r.results.length){ box.innerHTML='<div style="color:var(--sub);font-size:.85rem">'+(lang==='en'?'No users found':'لا يوجد مستخدمون')+'</div>'; return; }
+    box.innerHTML = r.results.map(u=>{
+      const icon=u.gender==='female'?'👧':'👦';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;background:#ffffff08;border:1px solid #ffffff22;border-radius:10px;padding:8px 10px;margin-bottom:6px">
+        <div style="display:flex;align-items:center;gap:8px"><span style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${u.avatar_color};font-size:1.1rem">${icon}</span><span style="font-weight:700">${u.username}</span></div>
+        <button onclick="sendFriendRequest('${u.username}')" style="padding:6px 12px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--neon),var(--pink));color:#fff;font-weight:800;cursor:pointer;font-size:.8rem">+</button>
+      </div>`;
+    }).join('');
+  });
+}
+
+async function sendFriendRequest(username){
+  const r=await api('/api/friends/add',{ method:'POST', body:JSON.stringify({friendUsername:username}) });
+  if(r.ok){ toast(lang==='en'?'Request sent':'أُرسل الطلب'); loadFriends(); }
+  else if(r.error==='friend-not-found') toast(lang==='en'?'User not found':'المستخدم غير موجود');
+  else if(r.error==='already-friends-or-pending') toast(lang==='en'?'Already friends/pending':'أنتم أصدقاء أو طلب موجود');
+  else toast('...');
+}
+
+function pushScore(){
+  if(!curUser) return;
+  api('/api/score',{ method:'POST', body:JSON.stringify({ total_score:curScore.total_score, games_won:curScore.games_won }) });
+}
+
+/* ============ INIT ============ */
+window.addEventListener('load', async ()=>{
+  applyLang(); updateScore();
+  // restore session
+  const token=getToken();
+  if(token){
+    const r=await api('/api/me');
+    if(r.error){ localStorage.removeItem('fs_token'); }
+    else {
+      curUser=r.user; curScore=r.score||{total_score:0,games_won:0};
+      document.getElementById('authScreen').style.display='none';
+      document.getElementById('friendsBtn').hidden=false;
+      document.getElementById('logoutBtn').hidden=false;
+      const badge=document.getElementById('userBadge'); badge.hidden=false;
+      badge.textContent=(curUser.gender==='female'?'👧':'👦')+' '+curUser.username;
+      applyLang(); updateScore();
+      return;
+    }
+  }
+  // show auth
+  switchAuth('login'); pickGender('male');
+});
+</script>
+</body>
+</html>
