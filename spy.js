@@ -12,6 +12,8 @@ const WORDS = [
 
 // rooms: code -> { code, players: [{id, name, conn}], spyIdx, pair, phase, votes, startTime, revealAt, voteAt }
 const rooms = new Map();
+const REVEAL_MS = parseInt(process.env.SPY_REVEAL_MS || '30000', 10);
+const VOTE_MS = parseInt(process.env.SPY_VOTE_MS || '120000', 10);
 
 function genCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -62,10 +64,10 @@ function initRoom(room) {
   room.votedSet = {};
   room.startTime = Date.now();
   // reveal window = 30s total
-  room.revealAt = Date.now() + 30000;
+  room.revealAt = Date.now() + REVEAL_MS;
   room.revealTimer = setTimeout(() => {
-    if (room.phase === 'playing') { room.phase = 'voting'; room.voteAt = Date.now() + 120000; startVoteTimer(room); }
-  }, 30000);
+    if (room.phase === 'playing') { room.phase = 'voting'; room.voteAt = Date.now() + VOTE_MS; startVoteTimer(room); }
+  }, REVEAL_MS);
   for (const p of room.players) {
     const isSpy = room.spyIdx === p.id;
     send(p.conn, {
@@ -75,15 +77,19 @@ function initRoom(room) {
       isSpy,
       word: isSpy ? room.pair[1] : room.pair[0],
       role: isSpy ? 'spy' : 'citizen',
+      players: room.players.map(x => ({ id: x.id, name: x.name })),
+      youId: p.id,
     });
   }
 }
 
 function startVoteTimer(room) {
-  room.voteAt = Date.now() + 120000;
+  room.voteAt = Date.now() + VOTE_MS;
   if (room.voteTimer) clearTimeout(room.voteTimer);
-  room.voteTimer = setTimeout(() => finishRound(room), 120000);
-  for (const p of room.players) send(p.conn, { type: 'votePhase', voteEndsAt: room.voteAt });
+  room.voteTimer = setTimeout(() => finishRound(room), VOTE_MS);
+  for (const p of room.players) {
+    send(p.conn, { ...roomPayload(room, p.id), type: 'votePhase', voteEndsAt: room.voteAt, youId: p.id });
+  }
 }
 
 function finishRound(room) {
@@ -147,12 +153,25 @@ function handleMessage(conn, data) {
   if (obj.type === 'vote') {
     const room = rooms.get(conn.roomCode);
     if (!room || room.phase !== 'voting') return;
+    // every player votes exactly once
+    if (room.voters && room.voters[conn.playerId] !== undefined) {
+      send(conn, { type: 'error', error: 'already-voted' });
+      return;
+    }
     const targetId = obj.targetId;
     if (typeof targetId !== 'number') return;
     if (targetId < 0 || targetId >= room.players.length) return;
+    room.voters = room.voters || {};
+    room.voters[conn.playerId] = targetId;
     room.votes[targetId] = (room.votes[targetId] || 0) + 1;
     room.votedSet[conn.playerId] = true;
-    broadcast(room, { type: 'voteUpdate', votes: room.votes, count: Object.keys(room.votedSet).length, total: room.players.length });
+    broadcast(room, {
+      type: 'voteUpdate',
+      votes: room.votes,
+      voters: room.voters,
+      count: Object.keys(room.votedSet).length,
+      total: room.players.length,
+    });
     return;
   }
 

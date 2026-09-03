@@ -1724,7 +1724,7 @@ function spyRevealResult(){
 
 /* ============ الجاسوس أونلاين (WebSocket) ============ */
 let soWs=null;
-let soState={code:null,id:null,players:[],phase:'lobby'};
+let soState={code:null,id:null,players:[],phase:'lobby',myVote:undefined};
 function openSpyOnline(){
   document.getElementById('soHome').style.display='block';
   document.getElementById('soLobby').style.display='none';
@@ -1800,11 +1800,15 @@ function soHandle(msg){
   }
   if(msg.type==='reveal'){
     soState.phase='game';
+    if(msg.players) soState.players=msg.players;
+    if(msg.youId!==undefined) soState.id=msg.youId;
     soRenderReveal(msg);
     return;
   }
   if(msg.type==='votePhase'){
     soState.phase='voting';
+    if(msg.players) soState.players=msg.players;
+    if(msg.youId!==undefined) soState.id=msg.youId;
     soRenderVote(msg);
     return;
   }
@@ -1875,6 +1879,8 @@ function soRenderVote(msg){
   document.getElementById('soGame').style.display='block';
   soState.phase='voting';
   soState.voteEnds=msg.voteEndsAt;
+  soState.myVote=undefined;
+  soState.votes=soState.votes||{};
   const g=document.getElementById('soGame');
   g.innerHTML=`<div style="text-align:center">
     <h3>🗳 ${t('من هو الجاسوس؟','Who is the spy?')}</h3>
@@ -1895,12 +1901,22 @@ function soPollVoteList(){
   const list=document.getElementById('soVoteList');
   if(!list) return;
   list.innerHTML=soState.players.map((p,idx)=>{
-    const v=(soState.votes&&soState.votes[idx])||0;
-    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-      <button onclick="soVote(${idx})" style="flex:1;text-align:right;padding:11px 12px;border-radius:10px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;font-weight:800">${p.name}</button>
-      <span style="color:var(--gold);font-weight:800;width:22px">${v}</span>
-    </div>`;
+    return soVoteItem(p, idx);
   }).join('');
+}
+function soVoteItem(p, idx){
+  const v=(soState.votes&&soState.votes[idx])||0;
+  const hasVoted = soState.myVote!==undefined;
+  const mine = hasVoted && soState.myVote===idx;
+  const me = idx===soState.id;
+  const btnBg = mine ? 'linear-gradient(135deg,var(--gold),var(--pink))' : (hasVoted?'#ffffff08':'#ffffff10');
+  const pointer = me ? 'default' : (hasVoted?'default':'pointer');
+  const selfTag = me ? ' <span style="font-size:.75rem;color:var(--sub)">(أنت/You)</span>' : '';
+  const myMark = mine ? ' <b style="color:var(--gold)">✔</b>' : '';
+  return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <button onclick="soVote(${idx})" ${hasVoted||me?'disabled':''} style="flex:1;text-align:right;padding:11px 12px;border-radius:10px;border:1px solid #ffffff33;background:${btnBg};color:#fff;font-weight:800;opacity:${me?1:1};cursor:${pointer}">${p.name}${selfTag}${myMark}</button>
+      <span style="color:var(--gold);font-weight:800;width:22px" title="${v} votes">${v}</span>
+    </div>`;
 }
 function soVoteTick(){
   const left=Math.max(0,Math.ceil((soState.voteEnds-Date.now())/1000));
@@ -1908,20 +1924,19 @@ function soVoteTick(){
   if(e) e.textContent=t('التخمين','Voting')+' · '+left+'s';
 }
 function soVote(idx){
-  if(soWs) soWs.send(JSON.stringify({type:'vote',targetId:idx}));
+  if(!soWs) return;
+  if(soState.myVote!==undefined || idx===soState.id) return;
+  soState.myVote=idx;
+  soWs.send(JSON.stringify({type:'vote',targetId:idx}));
+  toast(t('صوّت','Voted'));
+  const list=document.getElementById('soVoteList');
+  if(list) list.innerHTML=soState.players.map((p,i)=>soVoteItem(p,i)).join('');
 }
 function soUpdateVotes(msg){
   soState.votes=msg.votes;
   const list=document.getElementById('soVoteList');
   if(list){
-    // update numbers without rebuilding whole layout to keep simple
-    list.innerHTML=soState.players.map((p,idx)=>{
-      const v=(soState.votes&&soState.votes[idx])||0;
-      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-        <button onclick="soVote(${idx})" style="flex:1;text-align:right;padding:11px 12px;border-radius:10px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;font-weight:800">${p.name}</button>
-        <span style="color:var(--gold);font-weight:800;width:22px">${v}</span>
-      </div>`;
-    }).join('');
+    list.innerHTML=soState.players.map((p,i)=>soVoteItem(p,i)).join('');
   }
 }
 function soRenderResult(msg){
