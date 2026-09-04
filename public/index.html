@@ -1749,327 +1749,548 @@ function initWordl(){
     </div>
   </div>`;
 }
+/* ================== نظام المراحل المشترك ================== */
+function lvHead(lv, score, total, sub){
+  const pct=total?Math.min(100,(score/total)*100):0;
+  return `<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+    <div class="score-pill" style="display:inline-block">${sub||''}${t("المستوى","Level")} <b style="color:var(--neon)">${lv}</b></div>
+    <div style="flex:1;min-width:90px;height:9px;background:#ffffff18;border-radius:20px;overflow:hidden"><div style="width:${pct}%;height:100%;background:linear-gradient(90deg,var(--neon),var(--gold));border-radius:20px;transition:width .3s"></div></div>
+    <div class="score-pill" style="display:inline-block">⭐ <b>${score}</b></div>
+  </div>`;
+}
+function lvOver(nextLv, score, won, msg){
+  const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="result-panel" style="max-width:380px;margin:0 auto;text-align:center">
+    ${won?'<div class="big">🏆</div><div class="result-msg">'+msg+'</div>':'<div class="big">🎉</div><div class="result-msg">'+(msg||t("أكملت مستوى","Level complete"))+'</div>'}
+    <div class="small-stars">${t("نقاطك","Your score")}: <b style="color:var(--gold)">${score}</b></div>
+    ${won?`<button class="btn mt" onclick="award(3)">✓</button>`:''}
+    <button class="btn blue mt" style="width:100%" onclick="${nextLv}">${won?t("العب مجدداً","Play again"):(t("المستوى التالي ➜","Next level ➜"))}</button>
+  </div>`;
+}
 /* ================== سودوكو مصغّر 4x4 ================== */
-let _suko=[];
+let _suko={lv:1,maxLv:6,fixedPerLv:[12,10,8,6,5,4],cell:null,done:0,total:16};
 function initSuko(){
   const area=document.getElementById('gameArea');
-  _suko=genSuko();
+  const fixed=_suko.fixedPerLv[_suko.lv-1];
+  _suko.cell=genSuko(fixed);
+  _suko.done=0;
+  _suko.total=16-fixed;
   let cells='';
+  const board=_suko.cell;
   for(let r=0;r<4;r++){
     let row='';
     for(let c=0;c<4;c++){
-      const fixed=_suko[r][c]!==0;
-      row+=`<div style="background:${fixed?'#ffffff12':'#ffffff06'};border:1px solid #ffffff22;border-radius:8px;display:flex;align-items:center;justify-content:center">
-        ${fixed?`<b style="color:#fff;font-size:1.3rem">${_suko[r][c]}</b>`
-        :`<input id="sku${r}_${c}" maxlength="1" oninput="checkSuko()" style="width:100%;height:100%;text-align:center;background:transparent;border:none;color:var(--neon);font-size:1.3rem;font-weight:800">`}
+      const v=board[r][c];
+      const fixedc=v!==0;
+      row+=`<div style="background:${fixedc?'#ffffff12':'#ffffff06'};border:1px solid #ffffff22;border-radius:8px;display:flex;align-items:center;justify-content:center;height:52px">
+        ${fixedc?`<b style="color:#fff;font-size:1.3rem">${v}</b>`
+        :`<input id="sku${r}_${c}" readonly onclick="sukoTap(this,${r},${c})" style="width:100%;height:100%;text-align:center;background:transparent;border:none;color:var(--neon);font-size:1.3rem;font-weight:800;cursor:pointer">`}
       </div>`;
     }
     cells+=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;height:52px">${row}</div>`;
   }
   area.innerHTML=`<div class="q-area" style="max-width:360px;margin:0 auto;text-align:center">
+    ${lvHead(_suko.lv,_suko.done,_suko.total)}
     <h3>🧩 ${t("سودوكو مصغّر","Mini Sudoku")}</h3>
-    <p style="color:var(--sub);font-size:.9rem">${t("أكمل المربع 4x4 بحيث لا يتكرر رَقْم في أي صف أو عمود أو رُبع","Fill 4x4 so no number repeats in row, column, or quadrant")}</p>
-    <div style="margin:12px 0">${cells}</div>
+    <p style="color:var(--sub);font-size:.85rem">${t("اضغط خانة خضراء ثم اختر رقماً وأكمل بدون تكرار","Tap a green cell then pick a number. No repeats in row/column/box")}</p>
+    <div id="sukoBoard" style="margin:12px 0">${cells}</div>
+    <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:8px">
+      ${[1,2,3,4].map(n=>`<button onclick="sukoSet(${n})" style="width:44px;height:44px;border-radius:10px;border:1px solid var(--neon);background:#ffffff10;color:#fff;font-size:1.3rem;font-weight:800">${n}</button>`).join('')}
+    </div>
     <div id="sukoMsg" style="min-height:24px;font-weight:800"></div>
-    <button class="btn blue" onclick="initSuko()" style="width:100%;padding:12px">${t("لعبة جديدة","New game")}</button>
   </div>`;
 }
-function genSuko(){
-  // build a completed valid 4x4 latin square then blank random cells
+function genSuko(fixed){
   const base=[[1,2,3,4],[3,4,1,2],[2,1,4,3],[4,3,2,1]];
   const s=base.slice().map(r=>r.slice());
-  // keep at least 7 fixed
   let cells=[];
   for(let r=0;r<4;r++)for(let c=0;c<4;c++)cells.push([r,c]);
-  // shuffle cells to blank
   for(let i=cells.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[cells[i],cells[j]]=[cells[j],cells[i]];}
-  for(let k=0;k<7;k++){const[r,c]=cells[k];s[r][c]=0;}
+  for(let k=0;k<16-fixed;k++){const[r,c]=cells[k];s[r][c]=0;}
   return s;
 }
+function sukoSet(n){
+  if(_suko.cell==null)return;
+  const sel=[];for(let r=0;r<4;r++)for(let c=0;c<4;c++)if(_suko.cell[r][c]===0){const el=document.getElementById('sku'+r+'_'+c);if(el&&el.dataset.sel)sel.push([r,c]);}
+  if(sel.length!==1){const m=document.getElementById('sukoMsg');if(m){m.textContent=t("اضغط على خانة أولاً","Tap a cell first");m.style.color='#ef4444';}return;}
+  const [r,c]=sel[0];
+  _suko.cell[r][c]=n;
+  const el=document.getElementById('sku'+r+'_'+c);el.value=n;el.dataset.sel='';el.style.color='#22c55e';
+  checkSuko();
+}
+function sukoTap(el,r,c){
+  if(_suko.cell[r][c]!==0)return; // fixed cells not selectable
+  for(let a=0;a<4;a++)for(let b=0;b<4;b++){const e=document.getElementById('sku'+a+'_'+b);if(e)e.dataset.sel='';}
+  el.dataset.sel='1';el.style.color='var(--neon)';
+}
 function checkSuko(){
-  for(let r=0;r<4;r++)for(let c=0;c<4;c++){
-    if(_suko[r][c]===0){
-      const el=document.getElementById(`sku${r}_${c}`);
-      if(el){
-        const v=parseInt(el.value||'0',10);
-        if(v>=1&&v<=4) _suko[r][c]=v; else continue;
-      }
-    }
-  }
-  // check completion
-  let done=true;
-  for(let r=0;r<4;r++)for(let c=0;c<4;c++)if(_suko[r][c]===0){done=false;break;}
-  if(!done){document.getElementById('sukoMsg').textContent='';return;}
-  // validate rows/cols/quadrants
-  const ok=()=>{for(let r=0;r<4;r++){if(new Set(_suko[r]).size!==4)return false;}for(let c=0;c<4;c++){const col=[0,1,2,3].map(r=>_suko[r][c]);if(new Set(col).size!==4)return false;}return true;};
+  // count filled blanks
+  let filled=0;
+  for(let r=0;r<4;r++)for(let c=0;c<4;c++)if(_suko.cell[r][c]!==0)filled++;
+  if(filled<_suko.total){document.getElementById('sukoMsg').textContent='';return;}
+  const ok=()=>{for(let r=0;r<4;r++){if(new Set(_suko.cell[r]).size!==4)return false;}for(let c=0;c<4;c++){const col=[0,1,2,3].map(r=>_suko.cell[r][c]);if(new Set(col).size!==4)return false;}return true;};
   const msg=document.getElementById('sukoMsg');
-  if(ok()){msg.textContent=t("🎉 أحسنت! حللت السودوكو","🎉 Great! Sudoku solved");msg.style.color='#22c55e';}
-  else {msg.textContent=t("🚫 يوجد تكرار — حاول مرة أخرى","🚫 Duplicate numbers — try again");msg.style.color='#ef4444';}
+  if(ok()){
+    _suko.done=_suko.total;
+    if(_suko.lv>=_suko.maxLv){ award(3); lvOver('initSuko()','true',_suko.total,t("🎉 أكملت سودوكو!","🎉 Sudoku complete!")); return; }
+    lvOver('sukoNextLv','',_suko.total,null);
+  }else{msg.textContent=t("🚫 يوجد تكرار — تحقق من الأرقام","🚫 Duplicates — check your numbers");msg.style.color='#ef4444';}
 }
+function sukoNextLv(){_suko.lv++;initSuko();}
+
 /* ================== حساب سريع ================== */
-let _sp={x:0,y:0,op:0,score:0,time:0,timer:null};
+let _sp={lv:1,maxLv:8,q:0,perLv:5,score:0,x:0,y:0,op:0,timer:null,time:0};
 function initSpeed(){
+  if(_sp.timer)clearInterval(_sp.timer);
+  _sp={lv:1,maxLv:8,q:0,perLv:5,score:0,x:0,y:0,op:0,timer:null,time:0};
+  speedQ();
+}
+function speedQ(){
+  if(_sp.timer)clearInterval(_sp.timer);
   const area=document.getElementById('gameArea');
-  _sp={x:0,y:0,op:0,score:0,time:60,timer:null};
-  nextSpeedQ();
-  area.innerHTML=`<div class="q-area" style="max-width:380px;margin:0 auto;text-align:center">
-    <h3>⚡ ${t("حساب سريع","Speed Math")}</h3>
-    <div style="font-size:1.1rem;font-weight:800;color:var(--gold)" id="spTime"></div>
-    <div style="font-size:2.2rem;font-weight:900;margin:14px 0;color:#fff" id="spQ"></div>
-    <input id="spIn" type="number" style="width:100%;padding:12px;border-radius:12px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;font-size:1.2rem;text-align:center;box-sizing:border-box" onkeydown="if(event.key==='Enter')checkSpeed()" autofocus>
-    <div style="font-size:1.5rem;font-weight:900;color:var(--neon);margin:12px 0" id="spScore">0</div>
-    <div id="spMsg" style="min-height:22px"></div>
-  </div>`;
-  _sp.timer=setInterval(()=>{_sp.time--;const e=document.getElementById('spTime');if(e)e.textContent=_sp.time+'s';if(_sp.time<=0){clearInterval(_sp.timer);const m=document.getElementById('spMsg');if(m)m.textContent=t("⏰ انتهى الوقت! نتيجتك","⏰ Time up! Your score")+' : '+_sp.score;const i=document.getElementById('spIn');if(i)i.disabled=true;}},1000);
-  document.getElementById('spQ').textContent=spQtext();
-  document.getElementById('spIn').focus();
-}
-function spQtext(){
-  return _sp.op===0?(_sp.x+' + '+_sp.y):(_sp.op===1?(_sp.x+' − '+_sp.y):(_sp.x+' × '+_sp.y));
-}
-function nextSpeedQ(){
-  const ops=['+','-','×'];
-  _sp.op=Math.floor(Math.random()*3);
+  _sp.op=_sp.lv===1?Math.floor(Math.random()*2):Math.floor(Math.random()*3);
   if(_sp.op===2){_sp.x=Math.floor(Math.random()*9)+1;_sp.y=Math.floor(Math.random()*9)+1;}
-  else {_sp.x=Math.floor(Math.random()*90)+10;_sp.y=Math.floor(Math.random()*9)+1;}
+  else{_sp.x=Math.floor(Math.random()*90)+10;_sp.y=Math.floor(Math.random()*9)+1;}
+  const qtext=_sp.op===0?(_sp.x+' + '+_sp.y):(_sp.op===1?(_sp.x+' − '+_sp.y):(_sp.x+' × '+_sp.y));
+  const tl=Math.max(12-_sp.lv,5);
+  area.innerHTML=`<div class="q-area" style="max-width:380px;margin:0 auto;text-align:center">
+    ${lvHead(_sp.lv,_sp.score,_sp.perLv,'⚡ ')}
+    <h3>${t("حساب سريع","Speed Math")}</h3>
+    <div style="font-size:1.1rem;font-weight:800;color:var(--gold)" id="spTime">${tl}s</div>
+    <div style="font-size:2.2rem;font-weight:900;margin:14px 0;color:#fff" id="spQ">${qtext}</div>
+    <input id="spIn" type="number" style="width:100%;padding:12px;border-radius:12px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;font-size:1.2rem;text-align:center;box-sizing:border-box" onkeydown="if(event.key==='Enter')checkSpeed()">
+    <div id="spMsg" style="min-height:22px;margin-top:8px"></div>
+  </div>`;
+  _sp.time=tl;
+  document.getElementById('spIn').focus();
+  _sp.timer=setInterval(()=>{
+    _sp.time--;
+    const e=document.getElementById('spTime');if(e){e.textContent=_sp.time+'s';e.style.color=_sp.time<=3?'#ef4444':'';}
+    if(_sp.time<=0){clearInterval(_sp.timer);_sp.timer=null;
+      const m=document.getElementById('spMsg');if(m){m.textContent=t("⏰ انتهى الوقت!","⏰ Time up!");m.style.color='#ef4444';}
+      _sp.q++;setTimeout(speedNext,1000);}
+  },1000);
 }
+function speedNext(){
+  if(_sp.q>=_sp.perLv){if(_sp.lv>=_sp.maxLv){award(3);lvOver('initSpeed()','true',_sp.score,t("🎉 أنهيت كل المستويات!","🎉 All levels complete!"));return;}lvOver('speedNextLv','',_sp.score,null);return;}
+  speedQ();
+}
+function speedNextLv(){_sp.lv++;_sp.q=0;speedQ();}
 function checkSpeed(){
+  if(_sp.timer)clearInterval(_sp.timer);
   const e=document.getElementById('spIn');if(!e)return;
   const ans=parseInt(e.value,10);e.value='';
-  const op=_sp.op,a=_sp.x,b=_sp.y;
-  const correct=op===0?a+b:op===1?a-b:a*b;
-  const msg=document.getElementById('spMsg');
-  if(ans===correct){_sp.score++;document.getElementById('spScore').textContent=_sp.score;if(msg){msg.textContent='✅';msg.style.color='#22c55e';}}
-  else{if(msg){msg.textContent=t("❌ الصحيح","❌ Correct")+': '+correct;msg.style.color='#ef4444';}}
-  nextSpeedQ();
-  document.getElementById('spQ').textContent=spQtext();
+  const correct=_sp.op===0?_sp.x+_sp.y:_sp.op===1?_sp.x-_sp.y:_sp.x*_sp.y;
+  const m=document.getElementById('spMsg');
+  if(ans===correct){_sp.score++;m.textContent='✅ '+t("صحيح!","Correct!");m.style.color='#22c55e';}
+  else{m.textContent=t("❌ الصحيح","❌ Correct")+': '+correct;m.style.color='#ef4444';}
+  _sp.q++;setTimeout(speedNext,800);
 }
 /* ================== كرر التسلسل ================== */
-let _ms={seq:[],score:0,time:0,timer:null,delay:null};
+let _ms={lv:1,maxLv:6,q:0,perLv:3,seqLen:3,seq:[],score:0,timer:null,seqIdx:0,phase:'idle'};
 function initMemSeq(){
+  if(_ms.timer)clearTimeout(_ms.timer);
+  _ms={lv:1,maxLv:6,q:0,perLv:3,seqLen:3,seq:[],score:0,timer:null,seqIdx:0,phase:'idle'};
+  msRender();
+}
+function msRender(){
   const area=document.getElementById('gameArea');
-  _ms={seq:[],score:0,time:0,timer:null,delay:null};
+  _ms.seq=[];
+  _ms.seqLen=2+_ms.lv;
   area.innerHTML=`<div class="q-area" style="max-width:380px;margin:0 auto;text-align:center">
-    <h3>🔢 ${t("كرر التسلسل","Repeat the Sequence")}</h3>
-    <p style="color:var(--sub);font-size:.9rem">${t("احفظ الأرقام المتسلسلة ثم كرّرها","Memorize the sequence then repeat it")}</p>
-    <button onclick="_ms.delay=setTimeout(()=>msShow(),800)" class="btn blue" style="width:100%;padding:14px">${t("ابدأ","Start")}</button>
+    ${lvHead(_ms.lv,_ms.score,_ms.perLv,'🔢 ')}
+    <h3>${t("كرر التسلسل","Repeat the Sequence")}</h3>
+    <p style="color:var(--sub);font-size:.9rem">${t("احفظ الأرقام ثم كرّرها","Memorize then repeat the sequence")}</p>
     <div style="font-size:1.4rem;font-weight:900;margin:14px 0;letter-spacing:6px;color:var(--neon);min-height:40px" id="msDisp"></div>
-    <div id="msBtns" style="display:none;display:none"></div>
-    <div style="display:none;display:none" id="msInputWrap">
+    <div style="display:none" id="msInputWrap">
       <input id="msIn" type="number" style="width:100%;padding:12px;border-radius:12px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;text-align:center;box-sizing:border-box" onkeydown="if(event.key==='Enter')msCheck()">
       <button class="btn blue mt" style="width:100%" onclick="msCheck()">${t("تحقق","Check")}</button>
     </div>
-    <div style="font-size:1.3rem;font-weight:900;color:var(--gold);margin-top:10px" id="msScore"></div>
+    <div id="msMsg" style="min-height:22px;margin-top:8px"></div>
+    <button class="btn blue" style="width:100%;margin-top:8px" onclick="msStartShow()">${t("ابدأ","Start")}</button>
   </div>`;
-  area.querySelector('#msInputWrap').style.display='none';
 }
-function msShow(){
-  const b=Math.floor(Math.random()*9)+1;
-  _ms.seq.push(b);
+function msStartShow(){
+  _ms.seq=[];
+  for(let i=0;i<_ms.seqLen;i++)_ms.seq.push(Math.floor(Math.random()*9)+1);
   const d=document.getElementById('msDisp');
   let i=0;
-  const blink=()=>{d.textContent='';if(i<_ms.seq.length){d.textContent=_ms.seq[i];i++;setTimeout(()=>{d.textContent='';setTimeout(blink,240);},480);}else{document.getElementById('msInputWrap').style.display='block';document.getElementById('msIn').focus();}};
+  const blink=()=>{d.textContent='';if(i<_ms.seq.length){d.textContent=_ms.seq[i];i++;_ms.timer=setTimeout(()=>{d.textContent='';_ms.timer=setTimeout(blink,240);},480);}else{document.getElementById('msInputWrap').style.display='block';document.getElementById('msIn').focus();}};
   blink();
 }
 function msCheck(){
   const e=document.getElementById('msIn');if(!e)return;
-  const v=String(parseInt(e.value||'',10)).split('').join('');
+  const v=String(parseInt(e.value||'',10));
   const want=_ms.seq.join('');
-  if(v===want){_ms.score++;document.getElementById('msScore').textContent=_ms.score+' ✅';e.value='';document.getElementById('msInputWrap').style.display='none';setTimeout(msShow,600);}
-  else {alert(t("خطأ! التسلسل كان","Wrong! It was")+' '+want);_ms.seq=[];_ms.score=0;document.getElementById('msScore').textContent='0';document.getElementById('msDisp').textContent='';document.getElementById('msInputWrap').style.display='none';}
+  const m=document.getElementById('msMsg');
+  if(v===want){
+    _ms.score++;_ms.q++;
+    m.textContent='✅ '+t("صحيح!","Correct!");m.style.color='#22c55e';
+    e.value='';document.getElementById('msInputWrap').style.display='none';
+    if(_ms.q>=_ms.perLv){setTimeout(msLevelDone,600);return;}
+    setTimeout(msRender,600);
+  }else{
+    m.textContent='❌ '+t("التسلسل كان","It was")+': '+want;m.style.color='#ef4444';
+    e.value='';document.getElementById('msInputWrap').style.display='none';
+  }
 }
+function msLevelDone(){
+  if(_ms.lv>=_ms.maxLv){award(3);lvOver('initMemSeq()','true',_ms.score,t("🎉 أنهيت كل المستويات!","🎉 All levels complete!"));return;}
+  lvOver('msNextLv','',_ms.score,null);
+}
+function msNextLv(){_ms.lv++;_ms.q=0;msRender();}
 /* ================== عدّ بسرعة ================== */
 let _ctT=null;
 function initCount(){
+  _ct={lv:1,maxLv:8,q:0,perLv:5,score:0,ans:0};
+  countQ();
+}
+function countQ(){
   const area=document.getElementById('gameArea');
-  const n=Math.floor(Math.random()*12)+8;
-  const icons=['🍎','🍌','🍊','🍇','🔵','⭐','🟢'];
+  if(_ctT)clearInterval(_ctT);
+  const lv=Math.min(_ct.lv,8);
+  const nMax=8+lv*2;
+  const n=Math.floor(Math.random()*(nMax-5))+5+(lv>=3?2:0);
+  const icons=['🍎','🍌','🍊','🍇','🔵','⭐','🟢','🦋'];
   const ic=icons[Math.floor(Math.random()*icons.length)];
   let balls='';
   for(let i=0;i<n;i++)balls+=ic+' ';
-  if(_ctT)clearInterval(_ctT);
+  const total=_ct.perLv;
   area.innerHTML=`<div class="q-area" style="max-width:380px;margin:0 auto;text-align:center">
-    <h3>🔢 ${t("عدّ بسرعة","Count Fast")}</h3>
-    <div style="font-size:2rem;letter-spacing:4px;margin:14px 0;min-height:60px">${balls}</div>
+    ${lvHead(_ct.lv,_ct.q,total,'🔢 ')}
+    <h3>${t("عدّ بسرعة","Count Fast")}</h3>
+    <div style="font-size:2rem;letter-spacing:4px;margin:12px 0;min-height:60px">${balls}</div>
     <div style="font-size:1.2rem;font-weight:800;color:var(--gold)" id="ctTime"></div>
     <input id="ctIn" type="number" style="width:100%;padding:12px;border-radius:12px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;text-align:center;box-sizing:border-box" onkeydown="if(event.key==='Enter')ctCheck(${n})">
     <button class="btn blue mt" style="width:100%" onclick="ctCheck(${n})">${t("تحقق","Check")}</button>
     <div id="ctMsg" style="min-height:22px;margin-top:8px"></div>
   </div>`;
-  let time=10;
+  let time=Math.max(8-lv+8,6);
   const te=document.getElementById('ctTime');te.textContent=time+'s';
-  _ctT=setInterval(()=>{time--;te.textContent=time+'s';if(time<=0){clearInterval(_ctT);const m=document.getElementById('ctMsg');m.textContent=t("⏰ انتهى الوقت","⏰ Time up");document.getElementById('ctIn').disabled=true;}},1000);
+  _ctT=setInterval(()=>{time--;te.textContent=time+'s';if(time<=0){clearInterval(_ctT);const m=document.getElementById('ctMsg');m.textContent=t("⏰ انتهى الوقت — العدد","⏰ Time up — count was")+': '+n;m.style.color='#ef4444';document.getElementById('ctIn').disabled=true;_ct.q++;setTimeout(countNext,1400);}},1000);
 }
+function countNext(){
+  _ct.q++;
+  if(_ct.q>=_ct.perLv){ ctLevelDone(); return; }
+  countQ();
+}
+function ctLevelDone(){
+  if(_ct.lv>=_ct.maxLv){ award(3); lvOver('initCount()','true',_ct.score,t("🎉 أنهيت كل المستويات!","🎉 You finished all levels!")); return; }
+  _ct.lv++;
+  lvOver('countNextLv','',_ct.score,null);
+}
+function countNextLv(){_ct.q=0;countQ();}
 function ctCheck(n){
   const e=document.getElementById('ctIn');if(!e)return;
   const v=parseInt(e.value,10);
   const m=document.getElementById('ctMsg');
-  if(v===n){m.textContent=t("🎉 صحيح","🎉 Correct");m.style.color='#22c55e';clearInterval(_ctT);}
-  else{m.textContent=t("❌ العدد الصحيح كان","❌ Correct count was")+': '+n;m.style.color='#ef4444';}
+  clearInterval(_ctT);
+  const te=document.getElementById('ctTime');
+  if(te)te.textContent='✓';
+  if(v===n){_ct.score++;m.textContent=t("🎉 صحيح","🎉 Correct");m.style.color='#22c55e';}
+  else{m.textContent=t("❌ العدد كان","❌ Count was")+': '+n;m.style.color='#ef4444';}
+  e.disabled=true;
+  _ct.q++;
+  setTimeout(countNext,1200);
 }
+
 /* ================== قنبلة الكلمات ================== */
 let _wbT=null;
-const _wbStart=['م','ر','ا','ب','ش','ت','س','ق','ح','ي'];
+let _wb={lv:1,maxLv:8,q:0,perLv:5,score:0};
+const _wbPool=[
+  ['م','ر','ا','ب','ش','ت','س','ق','ح','ي'],
+  ['م','ر','ا','ب','ش','ت','س','ق','ح','ي','ن','ل','ع','ف','و'],
+  ['م','ر','ا','ب','ش','ت','س','ق','ح','ي','ن','ل','ع','ف','و','ك','د','ج'],
+  ['م','ر','ا','ب','ش','ت','س','ق','ح','ي','ن','ل','ع','ف','و','ك','د','ج','ة','ز','خ'],
+];
 function initWordBomb(){
-  const area=document.getElementById('gameArea');
   if(_wbT)clearInterval(_wbT);
-  let used=[];
-  let time=10;
-  let letter=_wbStart[Math.floor(Math.random()*_wbStart.length)];
+  _wb={lv:1,maxLv:8,q:0,perLv:5,score:0};
+  wbRender();
+}
+function wbRender(){
+  if(_wbT)clearInterval(_wbT);
+  const area=document.getElementById('gameArea');
+  const poolIdx=Math.min(Math.floor((_wb.lv-1)/2),_wbPool.length-1);
+  const pool=_wbPool[poolIdx];
+  const letter=pool[Math.floor(Math.random()*pool.length)];
+  const tl=Math.max(14-_wb.lv*1.5,5);
   area.innerHTML=`<div class="q-area" style="max-width:380px;margin:0 auto;text-align:center">
-    <h3>💣 ${t("قنبلة الكلمات","Word Bomb")}</h3>
+    ${lvHead(_wb.lv,_wb.score,_wb.perLv,'💣 ')}
+    <h3>${t("قنبلة الكلمات","Word Bomb")}</h3>
     <p style="color:var(--sub);font-size:.9rem">${t("اكتب كلمة تبدأ بالحرف قبل انفجار القنبلة","Type a word starting with the letter before the bomb explodes")}</p>
     <div style="font-size:3rem;font-weight:900;color:var(--neon);margin:12px 0" id="wbLetter">${letter}</div>
-    <div style="font-size:1.4rem;font-weight:900;color:var(--gold)" id="wbTime"></div>
-    <input id="wbIn" style="width:100%;padding:12px;border-radius:12px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;text-align:center;box-sizing:border-box" onkeydown="if(event.key==='Enter')wbCheck()" autofocus>
-    <div style="font-size:1.3rem;font-weight:900;color:var(--gold);margin-top:10px" id="wbScore">0</div>
-    <div id="wbMsg" style="min-height:22px"></div>
-    <button class="btn blue mt" style="width:100%" onclick="initWordBomb()">${t("قنبلة جديدة","New bomb")}</button>
+    <div style="font-size:1.4rem;font-weight:900;color:var(--gold)" id="wbTime">${tl}s</div>
+    <input id="wbIn" style="width:100%;padding:12px;border-radius:12px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;text-align:center;box-sizing:border-box" onkeydown="if(event.key==='Enter')wbCheck()">
+    <div id="wbMsg" style="min-height:22px;margin-top:8px"></div>
   </div>`;
-  let score=0;
-  document.getElementById('wbTime').textContent=time+'s';
-  _wbT=setInterval(()=>{time--;const e=document.getElementById('wbTime');if(e)e.textContent=time+'s';if(time<=0){clearInterval(_wbT);const m=document.getElementById('wbMsg');m.textContent=t("💥 انفجرت!","💥 Exploded");document.getElementById('wbIn').disabled=true;}},1000);
-  window._wbScore=score;
-  document.getElementById('wbScore').textContent=score;
+  _wb._letter=letter;_wb._time=tl;
   document.getElementById('wbIn').focus();
+  _wbT=setInterval(()=>{
+    _wb._time--;
+    const e=document.getElementById('wbTime');if(e){e.textContent=_wb._time+'s';e.style.color=_wb._time<=3?'#ef4444':'';}
+    if(_wb._time<=0){clearInterval(_wbT);_wbT=null;
+      const m=document.getElementById('wbMsg');if(m){m.textContent=t("💥 انفجرت!","💥 Exploded");m.style.color='#ef4444';}
+      document.getElementById('wbIn').disabled=true;_wb.q++;setTimeout(wbNext,1200);}
+  },1000);
 }
+function wbNext(){
+  if(_wb.q>=_wb.perLv){if(_wb.lv>=_wb.maxLv){award(3);lvOver('initWordBomb()','true',_wb.score,t("🎉 أنهيت كل المستويات!","🎉 All levels complete!"));return;}lvOver('wbNextLv','',_wb.score,null);return;}
+  wbRender();
+}
+function wbNextLv(){_wb.lv++;_wb.q=0;wbRender();}
 function wbCheck(){
   const e=document.getElementById('wbIn');if(!e)return;
   const v=e.value.trim();
   const m=document.getElementById('wbMsg');
-  const letterEl=document.getElementById('wbLetter');
-  const letter=letterEl?letterEl.textContent:'';
-  if(v&&v.startsWith(letter)&&v.length>1){
-    window._wbScore++;
-    document.getElementById('wbScore').textContent=window._wbScore;
+  const letter=_wb._letter;
+  if(v&&v.length>1&&v[0]===letter){
+    _wb.score++;_wb.q++;
     m.textContent='✅ '+v;m.style.color='#22c55e';
-    letterEl.textContent=_wbStart[Math.floor(Math.random()*_wbStart.length)];
     e.value='';
-  }else{m.textContent=t("❗ يجب أن تبدأ بالحرف","❗ Must start with")+': '+letter;m.style.color='#ef4444';}
+    if(_wb.q>=_wb.perLv){clearInterval(_wbT);setTimeout(wbNext,800);return;}
+    const poolIdx=Math.min(Math.floor((_wb.lv-1)/2),_wbPool.length-1);
+    const pool=_wbPool[poolIdx];
+    _wb._letter=pool[Math.floor(Math.random()*pool.length)];
+    document.getElementById('wbLetter').textContent=_wb._letter;
+  }else{m.textContent=t("❗ يجب أن تبدأ بـ","❗ Must start with")+': '+letter;m.style.color='#ef4444';}
 }
 /* ================== أطول كلمة ================== */
 let _anag="احمدرسلوكنة";
 function initAnag(){
+  _an={lv:1,maxLv:8,q:0,perLv:4,score:0,word:'',tries:0};
+  anagQ();
+}
+function anagQ(){
   const area=document.getElementById('gameArea');
-  // pick a target word, shuffle letters
-  const words=['مدرسة','سؤال','حديقة','قلم','كتاب','شمس','بحر','جبل','نهر','ورد'];
-  const w=words[Math.floor(Math.random()*words.length)];
-  const sh=w.split('').sort(()=>Math.random()-0.5).join('');
+  const wordsByLv=[
+    ['ورد','بحر','قلم','شمس','نهر','جبل','عسل','برد'],
+    ['مدرسة','سؤال','حديقة','كتاب','مدينة','طاولة','ساحة','نافورة'],
+    ['مطعم','مكتبة','ملعب','فندق','مطار','سوق','مدرسة','مستشفى'],
+    ['سيارة','طائرة','قطار','دراجة','حافلة','سفينة','صاروخ','غواصة'],
+    ['برتقال','بطيخ','فراولة','كرز','مانجو','عنبية','تفاح','شمام'],
+    ['كمبيوتر','تلفاز','هاتف','كاميرا','سماعة','شاشة','جهاز','راديو'],
+    ['مستقبل','تقدم','نجاح','اختراع','اكتشاف','ريادة','تطور','إبداع'],
+    ['مكتبة','متحف','مهرجان','امتحان','صديق','أمانة','ثقة','أمل'],
+  ];
+  const w=_an.q>=wordsByLv[_an.lv-1].length?null:wordsByLv[_an.lv-1][_an.q];
+  if(!w){_an.lv++;_an.q=0;anagLevelDone();return;}
+  _an.word=wordsByLv[_an.lv-1][_an.q];
+  _an.tries=0;
+  const sh=_an.word.split('').sort(()=>Math.random()-0.5).join('');
+  const total=_an.perLv;
   area.innerHTML=`<div class="q-area" style="max-width:380px;margin:0 auto;text-align:center">
-    <h3>🔤 ${t("أطول كلمة","Anagram")}</h3>
-    <p style="color:var(--sub);font-size:.9rem">${t("أعد ترتيب الحروف لتكوين الكلمة","Rearrange the letters to make the word")}</p>
-    <div style="display:flex;gap:6px;justify-content:center;margin:14px 0">
+    ${lvHead(_an.lv,_an.q,total,'🔤 ')}
+    <h3>${t("أطول كلمة","Anagram")}</h3>
+    <p style="color:var(--sub);font-size:.85rem">${t("رتب الحروف لتكوين الكلمة","Rearrange the letters to make the word")}</p>
+    <div style="display:flex;gap:6px;justify-content:center;margin:12px 0;flex-wrap:wrap">
       ${sh.split('').map(l=>`<div style="width:40px;height:44px;background:#ffffff12;border:1px solid var(--neon);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:900;color:var(--neon)">${l}</div>`).join('')}
     </div>
-    <input id="anIn" style="width:100%;padding:12px;border-radius:12px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;text-align:center;box-sizing:border-box;font-size:1.3rem;letter-spacing:4px" onkeydown="if(event.key==='Enter')anCheck('${w}')">
-    <button class="btn blue mt" style="width:100%" onclick="anCheck('${w}')">${t("تحقق","Check")}</button>
+    <input id="anIn" style="width:100%;padding:12px;border-radius:12px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;text-align:center;box-sizing:border-box;font-size:1.3rem;letter-spacing:4px" onkeydown="if(event.key==='Enter')anCheck()">
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn blue" style="flex:1" onclick="anCheck()">${t("تحقق","Check")}</button>
+      <button class="btn mt" style="flex:1;background:var(--card)" onclick="anHint()">💡 ${t("مساعدة","Hint")}</button>
+    </div>
     <div id="anMsg" style="min-height:22px;margin-top:8px"></div>
   </div>`;
-  document.getElementById('anIn').focus();
+  const inEl=document.getElementById('anIn');if(inEl)inEl.focus();
 }
-function anCheck(word){
+function anHint(){
+  const hint=_an.word[0]+' '+t('… ابدأ بهذا الحرف','… start with this letter');
+  const m=document.getElementById('anMsg');m.textContent='💡'+t('الحرف الأول','First letter')+': '+_an.word[0];m.style.color='var(--neon)';
+}
+function anNext(){
+  _an.q++;
+  if(_an.q>=_an.perLv){ anagLevelDone(); return; }
+  anagQ();
+}
+function anagLevelDone(){
+  if(_an.lv>_an.maxLv){ award(3); lvOver('initAnag()','true',_an.score,t("🎉 أنهيت كل المستويات!","🎉 You finished all levels!")); return; }
+  if(_an.lv>=_an.maxLv){ _an.lv++; lvOver('initAnag()','true',_an.score,null); return; }
+  _an.lv++;_an.q=0; lvOver('anagNextLv','',_an.score,null);
+}
+function anagNextLv(){anagQ();}
+function anCheck(){
   const e=document.getElementById('anIn');if(!e)return;
   const m=document.getElementById('anMsg');
-  if(e.value.trim()===word){m.textContent=t("🎉 صحيح","🎉 Correct");m.style.color='#22c55e';}
-  else{m.textContent=t("❌ الجواب","❌ Answer")+': '+word;m.style.color='#ef4444';}
+  _an.tries++;
+  if(e.value.trim()===_an.word){
+    _an.score++;
+    m.textContent=t("🎉 صحيح","🎉 Correct");m.style.color='#22c55e';
+    e.disabled=true;
+    setTimeout(anNext,1100);
+  }else{m.textContent=t("❌ حاول مرة أخرى","❌ Try again");m.style.color='#ef4444';e.value='';e.focus();}
 }
 /* ================== رتب الأرقام ================== */
+let _od={lv:1,maxLv:8,score:0};
 function initOrder(){
+  if(_od.lv===undefined)_od={lv:1,maxLv:8,score:0};
+  odRender();
+}
+function odRender(){
   const area=document.getElementById('gameArea');
-  const n=6;
+  const n=3+_od.lv;
   const nums=[];
-  while(nums.length<n){const v=Math.floor(Math.random()*50)+1;if(!nums.includes(v))nums.push(v);}
+  while(nums.length<n){const v=Math.floor(Math.random()*(_od.lv*15+10))+1;if(!nums.includes(v))nums.push(v);}
   const sh=nums.slice().sort(()=>Math.random()-0.5);
+  const mn=Math.min(...nums);
+  const cols=n<=6?3:n<=8?4:4;
   area.innerHTML=`<div class="q-area" style="max-width:380px;margin:0 auto;text-align:center">
-    <h3>📶 ${t("رتب الأرقام","Sort the Numbers")}</h3>
+    ${lvHead(_od.lv,_od.score,1,'📶 ')}
+    <h3>${t("رتب الأرقام","Sort the Numbers")}</h3>
     <p style="color:var(--sub);font-size:.9rem">${t("اضغط الأرقام ترتيباً تصاعدياً","Tap the numbers in ascending order")}</p>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0" id="odG">
-      ${sh.map((v,i)=>`<div style="background:#ffffff10;border:1px solid #ffffff22;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:900;color:#fff;height:64px;cursor:pointer" onclick="odTap(this,${v},${Math.min(...nums)},${n})">${v}</div>`).join('')}
+    <div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:8px;margin:14px 0" id="odG">
+      ${sh.map((v,i)=>`<div style="background:#ffffff10;border:1px solid #ffffff22;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:900;color:#fff;height:58px;cursor:pointer" onclick="odTap(this,${v})" data-v="${v}">${v}</div>`).join('')}
     </div>
-    <div style="font-size:1.3rem;font-weight:900;color:var(--gold)" id="odScore"></div>
-    <button class="btn blue mt" style="width:100%" onclick="initOrder()">${t("جولة جديدة","New round")}</button>
+    <div style="font-size:1.3rem;font-weight:900;color:var(--gold)" id="odScore">0/${n}</div>
+    <div id="odMsg" style="min-height:22px;margin-top:8px"></div>
   </div>`;
-  window._od={now:Math.min(...nums),done:0};
-  document.getElementById('odScore').textContent='0/'+n;
+  window._odState={now:mn,done:0,total:n};
 }
-function odTap(el,v,pred,total){
-  if(v!==window._od.now){el.style.borderColor='#ef4444';return;}
-  window._od.now++;
-  window._od.done++;
+function odTap(el,v){
+  const s=window._odState;if(!s)return;
+  if(v!==s.now){el.style.borderColor='#ef4444';return;}
+  s.now++;s.done++;
   el.style.borderColor='#22c55e';el.style.opacity='.4';el.onclick=null;
-  const s=document.getElementById('odScore');s.textContent=window._od.done+'/'+total;
-  if(window._od.done===total){s.textContent=t("🎉 فزت!","🎉 You won!");}
+  document.getElementById('odScore').textContent=s.done+'/'+s.total;
+  if(s.done===s.total){
+    _od.score++;
+    document.getElementById('odMsg').textContent='🎉 '+t("صحيح!","Correct!");document.getElementById('odMsg').style.color='#22c55e';
+    setTimeout(()=>{
+      if(_od.lv>=_od.maxLv){award(3);lvOver('initOrder()','true',_od.score,t("🎉 أنهيت كل المستويات!","🎉 All levels complete!"));return;}
+      lvOver('odNextLv','',_od.score,null);
+    },800);
+  }
 }
+function odNextLv(){_od.lv++;odRender();}
 /* ================== رد الفعل ================== */
+let _rf={lv:1,maxLv:6,q:0,perLv:3,score:0,best:9999,total:0,times:[],timer:null,phase:'wait',t0:null};
 function initReflex(){
-  const swState={phase:'wait',t0:null};
-  window._rf=swState;
+  if(_rf.timer)clearTimeout(_rf.timer);
+  _rf={lv:1,maxLv:6,q:0,perLv:3,score:0,best:9999,total:0,times:[],timer:null,phase:'wait',t0:null};
+  rfRender();
+}
+function rfRender(){
   const area=document.getElementById('gameArea');
   area.innerHTML=`<div class="q-area" style="max-width:380px;margin:0 auto;text-align:center">
-    <h3>🎯 ${t("رد الفعل","Reflex")}</h3>
-    <p style="color:var(--sub);font-size:.9rem">${t("انتظر أن يتحول اللون للأصفر ثم اضغط بأسرع وقت","Wait for green then tap as fast as you can")}</p>
+    ${lvHead(_rf.lv,_rf.score,_rf.perLv,'🎯 ')}
+    <h3>${t("رد الفعل","Reflex")}</h3>
     <div id="rfBox" onclick="rfClick()" style="width:100%;height:140px;background:#3b3b3b;color:#fff;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:800;margin:14px 0;cursor:pointer">${t("اضغط للبدء","Tap to start")}</div>
-    <div style="font-size:1.6rem;font-weight:900;color:var(--gold)" id="rfTime">0ms</div>
-    <button class="btn blue mt" style="width:100%" onclick="initReflex()">${t("إعادة","Retry")}</button>
+    <div style="font-size:1.6rem;font-weight:900;color:var(--gold)" id="rfTime">${_rf.best<9999?_rf.best+'ms':''}</div>
+    <div style="color:var(--sub);font-size:.9rem">${t("أفضل زمن","Best time")}: <b style="color:var(--neon)">${_rf.best<9999?_rf.best+'ms':'—'}</b></div>
+    <div id="rfMsg" style="min-height:22px;margin-top:8px"></div>
   </div>`;
+  _rf.phase='wait';
 }
 function rfClick(){
   const box=document.getElementById('rfBox');const time=document.getElementById('rfTime');
-  if(!window._rf)return;
-  const s=window._rf;
-  if(s.phase==='wait'){
-    s.phase='arming';
+  if(_rf.phase==='wait'){
+    _rf.phase='arming';
     box.textContent='...';box.style.background='#3b3b3b';
     const wait=Math.random()*2000+1000;
-    setTimeout(()=>{if(s.phase==='arming'){s.phase='go';s.t0=Date.now();box.textContent=t("اضغط!","GO!");box.style.background='#16a34a';}},wait);
-  }else if(s.phase==='go'){
-    const ms=Date.now()-s.t0;
+    if(_rf.timer)clearTimeout(_rf.timer);
+    _rf.timer=setTimeout(()=>{if(_rf.phase==='arming'){_rf.phase='go';_rf.t0=Date.now();box.textContent=t("اضغط!","GO!");box.style.background='#16a34a';}},wait);
+  }else if(_rf.phase==='go'){
+    const ms=Date.now()-_rf.t0;
+    if(_rf.timer)clearTimeout(_rf.timer);
+    _rf.phase='done';
+    _rf.times.push(ms);
+    _rf.total+=ms;
+    if(ms<_rf.best)_rf.best=ms;
     time.textContent=ms+'ms';
     box.textContent=ms+'ms';box.style.background='#3b3b3b';
-    window._rf.phase='done';
-  }else if(s.phase==='done'){return;}
-  else{s.phase='wait';box.textContent=t("اضغط للبدء","Tap to start");box.style.background='#3b3b3b';time.textContent='0ms';}
+    _rf.q++;
+    _rf.score++;
+    const avg=Math.round(_rf.total/_rf.q);
+    if(_rf.q>=_rf.perLv){
+      const thresh=280-_rf.lv*20;
+      const ok=avg<=thresh;
+      const m=document.getElementById('rfMsg');
+      m.textContent=ok?(t("متوسط الزمن","Avg")+': '+avg+'ms ✅'):(t("المعدل فوق الحد","Avg over limit")+': '+avg+'ms');
+      m.style.color=ok?'#22c55e':'#ef4444';
+      setTimeout(()=>{if(_rf.lv>=_rf.maxLv){award(3);lvOver('initReflex()','true',_rf.score,t("🎉 أنهيت كل المستويات!","🎉 All levels complete!"));return;}if(!ok)lvOver('rfRetry','',_rf.score,null);else lvOver('rfNextLv','',_rf.score,null);},1200);
+      return;
+    }
+    setTimeout(rfRender,600);
+  }else if(_rf.phase==='done'){return;}
 }
+function rfNextLv(){_rf.lv++;_rf.q=0;_rf.total=0;_rf.times=[];rfRender();}
+function rfRetry(){_rf.q=0;_rf.total=0;_rf.times=[];rfRender();}
 /* ================== المختلف ================== */
+let _odd={lv:1,maxLv:8,score:0};
 function initOdd(){
-  const area=document.getElementById('gameArea');
-  const em=['🍎','🍌','🍊','🍇','🚗','⭐','🔵','🎈'];
-  const base=em[Math.floor(Math.random()*em.length)];
-  let odd=em[Math.floor(Math.random()*em.length)];
-  if(odd===base)odd=em[(em.indexOf(base)+1)%em.length];
-  const cells=[];
-  for(let i=0;i<9;i++)cells.push(i===Math.floor(Math.random()*9)?odd:base);
-  area.innerHTML=`<div class="q-area" style="max-width:380px;margin:0 auto;text-align:center">
-    <h3>🎈 ${t("اكتشف المختلف","Odd One Out")}</h3>
-    <p style="color:var(--sub);font-size:.9rem">${t("اضغط الرمز المختلف","Tap the different one")}</p>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0">
-      ${cells.map((e,i)=>`<div style="font-size:2.4rem;padding:14px;background:#ffffff0a;border:1px solid #ffffff22;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer" onclick="if(this.firstChild.textContent==='${odd}'){this.style.borderColor='#22c55e';odWin()}else{this.style.borderColor='#ef4444'}">${e}</div>`).join('')}
-    </div>
-    <div style="font-size:1.3rem;font-weight:900;color:var(--gold);min-height:30px" id="odM"></div>
-    <button class="btn blue mt" style="width:100%" onclick="initOdd()">${t("جولة جديدة","New round")}</button>
-  </div>`;
+  if(_odd.lv===undefined)_odd={lv:1,maxLv:8,score:0};
+  oddRender();
 }
-function odWin(){const m=document.getElementById('odM');if(m)m.innerHTML=t("🎉","🎉")+' <b>'+t("وجدته!","Found it!")+'</b>';}
-/* ================== التحويل الثنائي ================== */
-let _bin=null;
-function initBinary(){
+function oddRender(){
   const area=document.getElementById('gameArea');
-  _bin=Math.floor(Math.random()*15)+1;
+  const em=['🍎','🍌','🍊','🍇','🚗','⭐','🔵','🎈','🍕','🐼','🌙','🌵'];
+  const grid=_odd.lv<4?3:_odd.lv<8?4:5;
+  const cells=grid*grid;
+  const base=em[Math.floor(Math.random()*em.length)];
+  let oddEm=em[Math.floor(Math.random()*em.length)];
+  if(oddEm===base)oddEm=em[(em.indexOf(base)+1)%em.length];
+  let oddPos=[];
+  while(oddPos.length<3){const p=Math.floor(Math.random()*cells);if(!oddPos.includes(p))oddPos.push(p);}
+  let gridHtml='';
+  for(let i=0;i<cells;i++){const isOdd=oddPos.includes(i);gridHtml+=`<div style="font-size:${grid>=5?'1.5rem':'2.2rem'};padding:12px;background:#ffffff0a;border:2px solid #ffffff22;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer" onclick="oddTap(this,${isOdd})">${isOdd?oddEm:base}</div>`;}
+  area.innerHTML=`<div class="q-area" style="max-width:420px;margin:0 auto;text-align:center">
+    ${lvHead(_odd.lv,_odd.score,3,'🎈 ')}
+    <h3>${t("اكتشف المختلف","Odd One Out")}</h3>
+    <p style="color:var(--sub);font-size:.9rem">${t("اضغط 3 رموز مختلفة","Tap the 3 odd ones")}</p>
+    <div style="display:grid;grid-template-columns:repeat(${grid},1fr);gap:8px;margin:14px 0">${gridHtml}</div>
+    <div style="font-size:1.3rem;font-weight:900;color:var(--gold);min-height:30px" id="oddMsg"></div>
+  </div>`;
+  _odd.found=0;
+}
+function oddTap(el,isOdd){
+  if(_odd.done)return;
+  if(isOdd&&!el.dataset.f){
+    el.dataset.f=1;el.style.borderColor='#22c55e';
+    _odd.found++;
+    document.getElementById('oddMsg').textContent=_odd.found+'/3';
+    if(_odd.found>=3){
+      _odd.done=true;_odd.score++;
+      document.getElementById('oddMsg').textContent='🎉 '+t("صحيح!","Correct!");
+      document.getElementById('oddMsg').style.color='#22c55e';
+      setTimeout(()=>{if(_odd.lv>=_odd.maxLv){award(3);lvOver('initOdd()','true',_odd.score,t("🎉 أنهيت كل المستويات!","🎉 All levels complete!"));return;}lvOver('oddNextLv','',_odd.score,null);},900);
+    }
+  }else if(!isOdd){el.style.borderColor='#ef4444';setTimeout(()=>el.style.borderColor='#ffffff22',300);}
+}
+function oddNextLv(){_odd.lv++;oddRender();}
+/* ================== التحويل الثنائي ================== */
+let _bin={lv:1,maxLv:8,q:0,perLv:4,score:0,val:0};
+function initBinary(){
+  _bin={lv:1,maxLv:8,q:0,perLv:4,score:0,val:0};
+  binRender();
+}
+function binRender(){
+  const area=document.getElementById('gameArea');
+  _bin.val=Math.floor(Math.random()*(Math.pow(2,2+_bin.lv)-1))+1;
   area.innerHTML=`<div class="q-area" style="max-width:380px;margin:0 auto;text-align:center">
-    <h3>💻 ${t("التحويل الثنائي","Binary")}</h3>
+    ${lvHead(_bin.lv,_bin.score,_bin.perLv,'💻 ')}
+    <h3>${t("التحويل الثنائي","Binary")}</h3>
     <p style="color:var(--sub);font-size:.9rem">${t("حوّل العدد إلى ثنائي (0 و 1)","Convert the number to binary (0s and 1s)")}</p>
-    <div style="font-size:3rem;font-weight:900;color:var(--neon);margin:14px 0">${_bin}</div>
+    <div style="font-size:3rem;font-weight:900;color:var(--neon);margin:14px 0">${_bin.val}</div>
     <input id="binIn" style="width:100%;padding:12px;border-radius:12px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;text-align:center;box-sizing:border-box;font-size:1.3rem;letter-spacing:3px" onkeydown="if(event.key==='Enter')binCheck()">
     <button class="btn blue mt" style="width:100%" onclick="binCheck()">${t("تحقق","Check")}</button>
     <div id="binMsg" style="min-height:22px;margin-top:8px;font-weight:800"></div>
   </div>`;
   document.getElementById('binIn').focus();
 }
+function binNext(){
+  _bin.q++;
+  if(_bin.q>=_bin.perLv){if(_bin.lv>=_bin.maxLv){award(3);lvOver('initBinary()','true',_bin.score,t("🎉 أنهيت كل المستويات!","🎉 All levels complete!"));return;}lvOver('binNextLv','',_bin.score,null);return;}
+  binRender();
+}
+function binNextLv(){_bin.lv++;_bin.q=0;binRender();}
 function binCheck(){
   const e=document.getElementById('binIn');if(!e)return;
   const m=document.getElementById('binMsg');
-  if(e.value.trim()===_bin.toString(2)){m.textContent=t("🎉 صحيح","🎉 Correct");m.style.color='#22c55e';}
-  else{m.textContent=t("❌ الجواب","❌ Answer")+': '+_bin.toString(2);m.style.color='#ef4444';}
+  if(e.value.trim()===_bin.val.toString(2)){m.textContent=t("🎉 صحيح","🎉 Correct");m.style.color='#22c55e';_bin.score++;}
+  else{m.textContent=t("❌ الجواب","❌ Answer")+': '+_bin.val.toString(2);m.style.color='#ef4444';}
+  e.disabled=true;
+  setTimeout(binNext,1000);
 }
 /* ================== صح أم خطأ ================== */
 const _facts=[
@@ -2078,48 +2299,60 @@ const _facts=[
   ["الأضداد في الفيزياء: موجب وسالب","صح"],["العمود القطبي أبرد من الصحراء","خطأ"],["الصقر يستطيع رؤية فأر من بعيد","صح"],
   ["السمك يستطيع السمع","خطأ"],["العسل لا يفسد أبداً","صح"],["الباندا تأكل الخيزران","صح"],["القطارات تسير على السكك","صح"],
 ];
-let _lq=[];_lqIdx=0;
+let _lg={lv:1,maxLv:6,q:0,perLv:5,score:0,order:[]};
 function initLogic(){
-  const area=document.getElementById('gameArea');
-  _lq=_facts.slice().sort(()=>Math.random()-0.5);
-  _lqIdx=0;
-  renderLogicQ(area);
+  _lg={lv:1,maxLv:6,q:0,perLv:5,score:0,order:[]};
+  lgRender();
 }
-function renderLogicQ(area){
-  const q=_lq[_lqIdx];
+function lgRender(){
+  const area=document.getElementById('gameArea');
+  if(_lg.order.length===0)_lg.order=_facts.slice().sort(()=>Math.random()-0.5);
+  const q=_lg.order[_lg.q%_lg.order.length];
   area.innerHTML=`<div class="q-area" style="max-width:380px;margin:0 auto;text-align:center">
-    <h3>🧠 ${t("صح أم خطأ","True or False")}</h3>
-    <div style="font-size:1rem;font-weight:800;color:var(--sub);margin-bottom:6px">${t("السؤال","Q")} ${_lqIdx+1}/${_lq.length}</div>
+    ${lvHead(_lg.lv,_lg.score,_lg.perLv,'🧠 ')}
+    <h3>${t("صح أم خطأ","True or False")}</h3>
+    <div style="font-size:1rem;font-weight:800;color:var(--sub);margin-bottom:6px">${t("السؤال","Q")} ${_lg.q+1}/${_lg.perLv}</div>
     <div style="font-size:1.3rem;font-weight:900;color:#fff;margin:16px 0;min-height:60px">${q[0]}</div>
     <div style="display:flex;gap:12px">
       <button class="btn" style="flex:1;background:#16a34a;padding:14px" onclick="logicSel('صح','${q[0]}','${q[1]}')">✓ ${t("صح","True")}</button>
       <button class="btn" style="flex:1;background:#dc2626;padding:14px" onclick="logicSel('خطأ','${q[0]}','${q[1]}')">✗ ${t("خطأ","False")}</button>
     </div>
     <div id="lgMsg" style="min-height:30px;margin-top:12px;font-weight:800"></div>
-    <div style="font-size:1.3rem;font-weight:900;color:var(--gold);margin-top:6px" id="lgScore">0</div>
   </div>`;
 }
 function logicSel(pick,str,ans){
   const m=document.getElementById('lgMsg');
-  let sc=parseInt(document.getElementById('lgScore').textContent||'0',10);
-  if(pick===ans){m.textContent='✅ '+t("صحيح","Correct");m.style.color='#22c55e';sc++;}
+  if(pick===ans){m.textContent='✅ '+t("صحيح","Correct");m.style.color='#22c55e';_lg.score++;}
   else{m.textContent='❌ '+t("الصحيح كان","Correct was")+': '+t(ans,ans);m.style.color='#ef4444';}
-  document.getElementById('lgScore').textContent=sc;
-  _lqIdx++;
-  setTimeout(()=>{if(_lqIdx<_lq.length)renderLogicQ(document.getElementById('gameArea'));else{m.textContent=t("🎉 نهاية اللعبة","🎉 End")+' — '+sc+'/'+_lq.length;}},1200);
+  _lg.order.splice(_lg.q%_lg.order.length,1);
+  _lg.q++;
+  setTimeout(()=>{
+    if(_lg.q>=_lg.perLv){
+      if(_lg.lv>=_lg.maxLv){award(3);lvOver('initLogic()','true',_lg.score,t("🎉 أنهيت كل المستويات!","🎉 All levels complete!"));return;}
+      lvOver('lgNextLv','',_lg.score,null);
+      return;
+    }
+    if(_lg.order.length===0)_lg.order=_facts.slice().sort(()=>Math.random()-0.5);
+    lgRender();
+  },1200);
 }
+function lgNextLv(){_lg.lv++;_lg.q=0;lgRender();}
 /* ================== أكمل التسلسل ================== */
-let _sn=null;
+let _sn={lv:1,maxLv:8,q:0,perLv:4,score:0,ans:0};
 function initSeqNext(){
+  _sn={lv:1,maxLv:8,q:0,perLv:4,score:0,ans:0};
+  snRender();
+}
+function snRender(){
   const area=document.getElementById('gameArea');
-  const t=Math.floor(Math.random()*3);
   let a,b,c,d,nxt;
-  if(t===0){a=Math.floor(Math.random()*5)+1;b=a+2;c=b+2;d=c+2;nxt=d+2;}
-  else if(t===1){a=Math.floor(Math.random()*4)+1;b=a*2;c=b*2;d=c*2;nxt=d*2;}
-  else{a=Math.floor(Math.random()*3)+1;b=a+3;c=b+3;d=c+3;nxt=d+3;}
-  _sn=nxt;
+  if(_sn.lv<=3){a=Math.floor(Math.random()*5)+1;const step=2+_sn.lv;b=a+step;c=b+step;d=c+step;nxt=d+step;}
+  else if(_sn.lv<=6){a=Math.floor(Math.random()*4)+1;b=a*2;c=b*2;d=c*2;nxt=d*2;}
+  else{diff=_sn.lv;const step=3+Math.floor(Math.random()*3);a=Math.floor(Math.random()*5)+1;b=a+step;c=b+step*2;d=c+step*3;nxt=d+step*4;}
+  _sn.ans=nxt;
   area.innerHTML=`<div class="q-area" style="max-width:380px;margin:0 auto;text-align:center">
-    <h3>🔗 ${t("أكمل التسلسل","Next in Sequence")}</h3>
+    ${lvHead(_sn.lv,_sn.score,_sn.perLv,'🔗 ')}
+    <h3>${t("أكمل التسلسل","Next in Sequence")}</h3>
     <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:16px 0;font-size:1.4rem;font-weight:900;color:#fff">
       <span style="padding:10px;background:#ffffff12;border-radius:8px">${a}</span><span style="padding:10px;background:#ffffff12;border-radius:8px">${b}</span><span style="padding:10px;background:#ffffff12;border-radius:8px">${c}</span><span style="padding:10px;background:#ffffff12;border-radius:8px">${d}</span>
       <span style="padding:10px;background:#ffffff12;border-radius:8px;color:var(--neon)">?</span>
@@ -2128,28 +2361,40 @@ function initSeqNext(){
     <button class="btn blue mt" style="width:100%" onclick="snCheck()">${t("تحقق","Check")}</button>
     <div id="snMsg" style="min-height:22px;margin-top:8px;font-weight:800"></div>
   </div>`;
+  document.getElementById('snIn').focus();
 }
 function snCheck(){
   const e=document.getElementById('snIn');if(!e)return;
   const m=document.getElementById('snMsg');
-  if(parseInt(e.value,10)===_sn){m.textContent=t("🎉 صحيح","🎉 Correct");m.style.color='#22c55e';}
-  else{m.textContent=t("❌ الجواب","❌ Answer")+': '+_sn;m.style.color='#ef4444';}
+  if(parseInt(e.value,10)===_sn.ans){m.textContent=t("🎉 صحيح","🎉 Correct");m.style.color='#22c55e';_sn.score++;}
+  else{m.textContent=t("❌ الجواب","❌ Answer")+': '+_sn.ans;m.style.color='#ef4444';}
+  e.disabled=true;_sn.q++;
+  setTimeout(()=>{if(_sn.q>=_sn.perLv){if(_sn.lv>=_sn.maxLv){award(3);lvOver('initSeqNext()','true',_sn.score,t("🎉 أنهيت كل المستويات!","🎉 All levels complete!"));return;}lvOver('snNextLv','',_sn.score,null);return;}snRender();},1000);
 }
+function snNextLv(){_sn.lv++;_sn.q=0;snRender();}
 /* ================== توصيل البطاقات ================== */
-let _mc=null;
+let _mc={lv:1,maxLv:6,pairs:3,score:0,done:0,shown:[],lock:false};
 function initMatchCards(){
+  if(_mc.lv===undefined)_mc={lv:1,maxLv:6,pairs:3,score:0,done:0,shown:[],lock:false};
+  mcRender();
+}
+function mcRender(){
   const area=document.getElementById('gameArea');
-  const icons=['🍎','🚀','⭐','🌈','🐼','🍕','⚽','👻'];
-  const all=icons.concat(icons).sort(()=>Math.random()-0.5);
-  _mc={shown:[],pairs:0,last:null,lock:false};
+  const icons=['🍎','🚀','⭐','🌈','🐼','🍕','⚽','👻','🌙','🌵'];
+  const n=_mc.lv+3;
+  _mc.pairs=n;
+  const chosen=icons.slice(0,n);
+  const all=chosen.concat(chosen).sort(()=>Math.random()-0.5);
+  _mc.done=0;_mc.shown=[];_mc.lock=false;
   area.innerHTML=`<div class="q-area" style="max-width:380px;margin:0 auto;text-align:center">
-    <h3>🃏 ${t("توصيل البطاقات","Memory Match")}</h3>
+    ${lvHead(_mc.lv,_mc.score,1,'🃏 ')}
+    <h3>${t("توصيل البطاقات","Memory Match")}</h3>
     <p style="color:var(--sub);font-size:.9rem">${t("اقلب وطابق الأزواج","Flip and match the pairs")}</p>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px auto;max-width:340px" id="mcG">
-      ${all.map((ic,i)=>`<div id="mc${i}" data-i="${i}" data-v="${ic}" onclick="mcFlip(this)" style="height:64px;background:linear-gradient(135deg,#4f6ef7,#8b5cf6);border:1px solid #ffffff22;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:transparent;cursor:pointer;user-select:none"></div>`).join('')}
+    <div style="display:grid;grid-template-columns:repeat(${n<=5?4:5},1fr);gap:8px;margin:14px auto;max-width:340px" id="mcG">
+      ${all.map((ic,i)=>`<div id="mc${i}" data-i="${i}" data-v="${ic}" onclick="mcFlip(this)" style="height:${n>8?'52px':'64px'};background:linear-gradient(135deg,#4f6ef7,#8b5cf6);border:1px solid #ffffff22;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:transparent;cursor:pointer;user-select:none"></div>`).join('')}
     </div>
-    <div style="font-size:1.3rem;font-weight:900;color:var(--gold)" id="mcM"></div>
-    <button class="btn blue mt" style="width:100%" onclick="initMatchCards()">${t("جولة جديدة","New round")}</button>
+    <div style="font-size:1.3rem;font-weight:900;color:var(--gold)" id="mcM">0/${_mc.pairs}</div>
+    <div id="mcMsg" style="min-height:22px;margin-top:8px"></div>
   </div>`;
 }
 function mcFlip(el){
@@ -2160,31 +2405,62 @@ function mcFlip(el){
     _mc.lock=true;
     const [a,b]=_mc.shown;
     if(a.dataset.v===b.dataset.v&&a.dataset.i!==b.dataset.i){
-      _mc.pairs++;document.getElementById('mcM').textContent=_mc.pairs+'/8';setTimeout(()=>{a.style.visibility='hidden';b.style.visibility='hidden';_mc.shown=[];_mc.lock=false;if(_mc.pairs===8)document.getElementById('mcM').textContent=t("🎉 فزت!","🎉 You won!");},500);
+      _mc.done++;
+      document.getElementById('mcM').textContent=_mc.done+'/'+_mc.pairs;
+      setTimeout(()=>{
+        a.style.visibility='hidden';b.style.visibility='hidden';_mc.shown=[];_mc.lock=false;
+        if(_mc.done===_mc.pairs){
+          _mc.score++;
+          document.getElementById('mcMsg').textContent='🎉 '+t("صحيح!","Correct!");
+          document.getElementById('mcMsg').style.color='#22c55e';
+          setTimeout(()=>{if(_mc.lv>=_mc.maxLv){award(3);lvOver('initMatchCards()','true',_mc.score,t("🎉 أنهيت كل المستويات!","🎉 All levels complete!"));return;}lvOver('mcNextLv','',_mc.score,null);},700);
+        }
+      },500);
     }else{setTimeout(()=>{a.textContent='';a.style.color='transparent';a.style.background='linear-gradient(135deg,#4f6ef7,#8b5cf6)';b.textContent='';b.style.color='transparent';b.style.background='linear-gradient(135deg,#4f6ef7,#8b5cf6)';_mc.shown=[];_mc.lock=false;},700);}
   }
 }
+function mcNextLv(){_mc.lv++;mcRender();}
 /* ================== سرعة التمييز ================== */
-let _rc={ans:'',time:0,timer:null};
+let _rc={lv:1,maxLv:6,q:0,perLv:5,score:0,ans:'',timer:null};
 const _rcColors=['أحمر','أزرق','أخضر','أصفر','بنفسجي','برتقالي'];
 const _rcCSS={أحمر:'#ef4444',أزرق:'#3b82f6',أخضر:'#22c55e',أصفر:'#eab308',بنفسجي:'#8b5cf6',برتقالي:'#f97316'};
 function initReaction(){
+  if(_rc.timer)clearInterval(_rc.timer);
+  _rc={lv:1,maxLv:6,q:0,perLv:5,score:0,ans:'',timer:null};
+  rcRender();
+}
+function rcRender(){
   const area=document.getElementById('gameArea');
   if(_rc.timer)clearInterval(_rc.timer);
-  _rc={ans:'',time:30,timer:null};
-  rcNext();
   area.innerHTML=`<div class="q-area" style="max-width:380px;margin:0 auto;text-align:center">
-    <h3>🌈 ${t("سرعة التمييز","Color Reaction")}</h3>
-    <p style="color:var(--sub);font-size:.9rem">${t("اكتب لون النص (وليس معنى الكلمة)","Type the ink color, not the word")}</p>
+    ${lvHead(_rc.lv,_rc.score,_rc.perLv,'🌈 ')}
+    <h3>${t("سرعة التمييز","Color Reaction")}</h3>
+    <p style="color:var(--sub);font-size:.9rem">${t("اضغط لون الحبر (وليس معنى الكلمة)","Tap the ink color, not the word")}</p>
     <div style="font-size:1.4rem;font-weight:900;color:var(--gold)" id="rcTime"></div>
     <div style="font-size:1.2rem;font-weight:800;color:#fff;margin:14px 0" id="rcQ"></div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px" id="rcBtns"></div>
-    <div style="font-size:1.4rem;font-weight:900;color:var(--neon);margin-top:12px" id="rcScore">0</div>
     <div id="rcMsg" style="min-height:22px"></div>
   </div>`;
-  document.getElementById('rcTime').textContent=_rc.time+'s';
-  _rc.timer=setInterval(()=>{_rc.time--;const e=document.getElementById('rcTime');if(e)e.textContent=_rc.time+'s';if(_rc.time<=0){clearInterval(_rc.timer);const m=document.getElementById('rcMsg');m.textContent=t("⏰ انتهى الوقت","⏰ Time up");}},1000);
+  rcStartTimer();
+  rcNext();
 }
+function rcStartTimer(){
+  const tl=Math.max(30-(_rc.lv-1)*4,8);
+  const te=document.getElementById('rcTime');te.textContent=tl+'s';
+  let time=tl;
+  _rc.timer=setInterval(()=>{
+    time--;
+    const e=document.getElementById('rcTime');if(e){e.textContent=time+'s';e.style.color=time<=3?'#ef4444':'';}
+    if(time<=0){clearInterval(_rc.timer);_rc.timer=null;
+      const m=document.getElementById('rcMsg');m.textContent=t("⏰ انتهى الوقت","⏰ Time up");m.style.color='#ef4444';
+      _rc.q++;setTimeout(rcNext2,1200);}
+  },1000);
+}
+function rcNext2(){
+  if(_rc.q>=_rc.perLv){if(_rc.lv>=_rc.maxLv){award(3);lvOver('initReaction()','true',_rc.score,t("🎉 أنهيت كل المستويات!","🎉 All levels complete!"));return;}lvOver('rcNextLv','',_rc.score,null);return;}
+  rcRender();
+}
+function rcNextLv(){_rc.lv++;_rc.q=0;rcRender();}
 function rcNext(){
   const word=Math.floor(Math.random()*_rcColors.length);
   const ink=Math.floor(Math.random()*_rcColors.length);
@@ -2196,9 +2472,12 @@ function rcNext(){
   }
 }
 function rcPick(c){
-  const sc=document.getElementById('rcScore');
-  if(c===_rc.ans){const s=parseInt(sc.textContent||'0',10)+1;sc.textContent=s;rcNext();}
-  else{const m=document.getElementById('rcMsg');if(m){m.textContent='❌ '+_rc.ans;m.style.color='#ef4444';}}
+  if(c===_rc.ans){
+    _rc.score++;_rc.q++;
+    const m=document.getElementById('rcMsg');m.textContent='✅ '+t("صحيح!","Correct!");m.style.color='#22c55e';
+    if(_rc.q>=_rc.perLv){clearInterval(_rc.timer);_rc.timer=null;setTimeout(rcNext2,800);return;}
+    rcNext();
+  }else{const m=document.getElementById('rcMsg');if(m){m.textContent='❌ '+_rc.ans;m.style.color='#ef4444';}}
 }
 /* ================== أعلى أم أقل ================== */
 let _hl=null;
@@ -2260,42 +2539,67 @@ function finishHL(){
   _hl.round=_hl.total+1;
 }
 /* ================== فيبوناتشي ================== */
-let _fib=null;
+let _fib={lv:1,maxLv:8,q:0,perLv:4,score:0,a:1,b:1,ans:0,pos:0};
 function initFib(){
+  _fib={lv:1,maxLv:8,q:0,perLv:4,score:0,a:1,b:1,ans:0,pos:0};
+  fibRender();
+}
+function fibRender(){
   const area=document.getElementById('gameArea');
-  _fib={a:Math.floor(Math.random()*5)+1,b:Math.floor(Math.random()*5)+1};
-  const c=_fib.a+_fib.b;
+  const n=3+_fib.lv;
+  const seq=[];
+  _fib.a=Math.floor(Math.random()*3)+1;
+  _fib.b=Math.floor(Math.random()*3)+1;
+  for(let i=0;i<n;i++){seq.push(_fib.a);const c=_fib.a+_fib.b;_fib.a=_fib.b;_fib.b=c;}
+  _fib.pos=seq.length-1;
+  _fib.ans=seq[seq.length-1];
+  const shown=seq.slice(0,seq.length-1).join(' ، ');
   area.innerHTML=`<div class="q-area" style="max-width:380px;margin:0 auto;text-align:center">
-    <h3>🌀 ${t("فيبوناتشي","Fibonacci")}</h3>
+    ${lvHead(_fib.lv,_fib.score,_fib.perLv,'🌀 ')}
+    <h3>${t("فيبوناتشي","Fibonacci")}</h3>
     <p style="color:var(--sub);font-size:.9rem">${t("أكمل التسلسل (كل رقم = مجموع السابقين)","Complete: each number is the sum of the two before")}</p>
-    <div style="font-size:1.6rem;font-weight:900;color:#fff;margin:16px 0">${_fib.a} ، ${_fib.b} ، ${c} ، <span style="color:var(--neon)">?</span></div>
+    <div style="font-size:1.6rem;font-weight:900;color:#fff;margin:16px 0">${shown} ، <span style="color:var(--neon)">?</span></div>
     <input id="fibIn" type="number" style="width:100%;padding:12px;border-radius:12px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;text-align:center;box-sizing:border-box;font-size:1.3rem" onkeydown="if(event.key==='Enter')fibCheck()">
     <button class="btn blue mt" style="width:100%" onclick="fibCheck()">${t("تحقق","Check")}</button>
     <div id="fibMsg" style="min-height:22px;margin-top:8px;font-weight:800"></div>
   </div>`;
+  document.getElementById('fibIn').focus();
 }
 function fibCheck(){
   const e=document.getElementById('fibIn');if(!e)return;
   const m=document.getElementById('fibMsg');
-  const ans=_fib.a+_fib.b+_fib.b;
-  if(parseInt(e.value,10)===ans){m.textContent=t("🎉 صحيح","🎉 Correct");m.style.color='#22c55e';}
-  else{m.textContent=t("❌ الجواب","❌ Answer")+': '+ans;m.style.color='#ef4444';}
+  if(parseInt(e.value,10)===_fib.ans){m.textContent=t("🎉 صحيح","🎉 Correct");m.style.color='#22c55e';_fib.score++;}
+  else{m.textContent=t("❌ الجواب","❌ Answer")+': '+_fib.ans;m.style.color='#ef4444';}
+  e.disabled=true;_fib.q++;
+  setTimeout(()=>{if(_fib.q>=_fib.perLv){if(_fib.lv>=_fib.maxLv){award(3);lvOver('initFib()','true',_fib.score,t("🎉 أنهيت كل المستويات!","🎉 All levels complete!"));return;}lvOver('fibNextLv','',_fib.score,null);return;}fibRender();},1000);
 }
+function fibNextLv(){_fib.lv++;_fib.q=0;fibRender();}
 /* ================== بنك الكلمات ================== */
+let _wbk={lv:1,maxLv:6,score:0,letters:'',found:null};
 function initWordBank(){
+  if(_wbk.lv===undefined)_wbk={lv:1,maxLv:6,score:0,letters:'',found:null};
+  wbkRender();
+}
+function wbkRender(){
   const area=document.getElementById('gameArea');
   const pool='ابتثجحخدذرزسشصضطظعغفقكلمنهوي';
-  const letters=pool.split('').sort(()=>Math.random()-0.5).slice(0,8).join('');
-  let found=new Set();
-  window._wbk={letters,found};
+  const letterCount=6+_wbk.lv;
+  const letters=pool.split('').sort(()=>Math.random()-0.5).slice(0,letterCount).join('');
+  _wbk.letters=letters;
+  _wbk.found=new Set();
+  const target=4+_wbk.lv*2;
   area.innerHTML=`<div class="q-area" style="max-width:380px;margin:0 auto;text-align:center">
-    <h3>💬 ${t("بنك الكلمات","Word Bank")}</h3>
+    ${lvHead(_wbk.lv,_wbk.score,1,'💬 ')}
+    <h3>${t("بنك الكلمات","Word Bank")}</h3>
+    <div style="color:var(--sub);font-size:.9rem;margin-bottom:8px">${t("الهدف","Target")}: <b style="color:var(--neon)">${target}</b> ${t("كلمة","words")}</div>
     <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:14px 0">${letters.split('').map(l=>`<span style="width:38px;height:42px;background:#ffffff12;border:1px solid var(--neon);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:900;color:var(--neon)">${l}</span>`).join('')}</div>
     <input id="wbkIn" style="width:100%;padding:12px;border-radius:12px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;text-align:center;box-sizing:border-box" onkeydown="if(event.key==='Enter')wbkAdd()">
     <button class="btn blue mt" style="width:100%" onclick="wbkAdd()">${t("أضف كلمة","Add word")}</button>
-    <div style="font-size:1.3rem;font-weight:900;color:var(--gold);margin-top:10px" id="wbkScore">0</div>
+    <div style="font-size:1.3rem;font-weight:900;color:var(--gold);margin-top:10px" id="wbkScore">0/${target}</div>
     <div id="wbkList" style="min-height:30px;font-size:.85rem;color:var(--sub)"></div>
   </div>`;
+  _wbk._target=target;
+  document.getElementById('wbkIn').focus();
 }
 function wbkAdd(){
   const e=document.getElementById('wbkIn');if(!e)return;
@@ -2304,55 +2608,106 @@ function wbkAdd(){
   if(!v){return;}
   const ok=/^[ابتثجحخدذرزسشصضطظعغفقكلمنهوي]+$/.test(v);
   if(!ok){return;}
-  if(window._wbk.found.has(v)){e.value='';return;}
-  window._wbk.found.add(v);
-  document.getElementById('wbkScore').textContent=window._wbk.found.size;
+  if(_wbk.found.has(v)){e.value='';return;}
+  _wbk.found.add(v);
+  _wbk.score++;
+  document.getElementById('wbkScore').textContent=_wbk.found.size+'/'+_wbk._target;
   ls.textContent+=v+' · ';
   e.value='';
+  if(_wbk.found.size>=_wbk._target){
+    e.disabled=true;
+    setTimeout(()=>{if(_wbk.lv>=_wbk.maxLv){award(3);lvOver('initWordBank()','true',_wbk.score,t("🎉 أنهيت كل المستويات!","🎉 All levels complete!"));return;}lvOver('wbkNextLv','',_wbk.score,null);},600);
+  }
 }
+function wbkNextLv(){_wbk.lv++;wbkRender();}
 /* ================== الرقم الأكبر ================== */
+let _bn={lv:1,maxLv:8,score:0,done:0,timer:null};
 function initBigNum(){
+  if(_bn.timer)clearTimeout(_bn.timer);
+  _bn={lv:1,maxLv:8,score:0,done:0,timer:null};
+  bnRender();
+}
+function bnRender(){
   const area=document.getElementById('gameArea');
-  const nums=[];while(nums.length<4){const v=Math.floor(Math.random()*998)+2;if(!nums.includes(v))nums.push(v);}
+  const n=Math.min(3+_bn.lv,8);
+  const nums=[];while(nums.length<n){const v=Math.floor(Math.random()*998)+2;if(!nums.includes(v))nums.push(v);}
   const max=Math.max(...nums);
+  const cols=n<=4?2:3;
+  const flash=Math.max(3000-_bn.lv*300,800);
   area.innerHTML=`<div class="q-area" style="max-width:380px;margin:0 auto;text-align:center">
-    <h3>🔢 ${t("الرقم الأكبر","Biggest Number")}</h3>
-    <p style="color:var(--sub);font-size:.9rem">${t("اضغط أكبر رقم بأسرع وقت","Tap the biggest number fast")}</p>
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:14px 0">
-      ${nums.map((v,i)=>`<div style="padding:22px;background:#ffffff0e;border:1px solid #ffffff22;border-radius:12px;font-size:1.8rem;font-weight:900;color:#fff;text-align:center;cursor:pointer" onclick="bnTap(this,${v},${max})">${v}</div>`).join('')}
+    ${lvHead(_bn.lv,_bn.score,1,'🔢 ')}
+    <h3>${t("الرقم الأكبر","Biggest Number")}</h3>
+    <p style="color:var(--sub);font-size:.9rem">${t("تذكر أين هو أكبر رقم ثم اضغطه","Remember where the biggest is, then tap it")}</p>
+    <div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:10px;margin:14px 0" id="bnG">
+      ${nums.map((v,i)=>`<div style="padding:22px;background:#ffffff0e;border:1px solid #ffffff22;border-radius:12px;font-size:1.7rem;font-weight:900;color:#fff;text-align:center;cursor:pointer" onclick="bnTap(this,${v},${max})">${v}</div>`).join('')}
     </div>
-    <div style="font-size:1.6rem;font-weight:900;color:var(--gold);min-height:30px" id="bnM"></div>
-    <button class="btn blue mt" style="width:100%" onclick="initBigNum()">${t("جولة جديدة","New round")}</button>
+    <div style="font-size:1.2rem;font-weight:900;color:var(--gold);min-height:30px" id="bnMsg"></div>
   </div>`;
+  _bn._max=max;
+  _bn.timer=setTimeout(()=>{
+    document.querySelectorAll('#bnG div').forEach(d=>{d.style.color='transparent';d.style.fontSize='0px';});
+    document.getElementById('bnMsg').textContent=t("اضغط الآن!","Tap now!");
+  },flash);
 }
 function bnTap(el,v,max){
-  const m=document.getElementById('bnM');
-  if(v===max){m.innerHTML='🎉 '+t("صحيح","Correct");m.style.color='#22c55e';el.style.borderColor='#22c55e';}
-  else{m.textContent='❌ '+max;m.style.color='#ef4444';el.style.borderColor='#ef4444';}
+  if(_bn.done)return;
+  const m=document.getElementById('bnMsg');
+  _bn.done=true;
+  if(_bn.timer)clearTimeout(_bn.timer);
+  document.querySelectorAll('#bnG div').forEach(d=>{d.style.color='#fff';});
+  if(v===max){
+    _bn.score++;
+    m.textContent='🎉 '+t("صحيح!","Correct!");m.style.color='#22c55e';el.style.borderColor='#22c55e';
+    document.getElementById('bnG').style.pointerEvents='none';
+    setTimeout(()=>{if(_bn.lv>=_bn.maxLv){award(3);lvOver('initBigNum()','true',_bn.score,t("🎉 أنهيت كل المستويات!","🎉 All levels complete!"));return;}lvOver('bnNextLv','',_bn.score,null);},800);
+  }else{
+    m.textContent='❌ '+max;m.style.color='#ef4444';el.style.borderColor='#ef4444';
+    document.getElementById('bnG').style.pointerEvents='none';
+  }
 }
+function bnNextLv(){_bn.lv++;bnRender();}
 /* ================== فك التشفير ================== */
-let _dec=null;
+let _dc={lv:1,maxLv:8,q:0,perLv:4,score:0,word:''};
+const _decWords=[
+  ['مدرسة','سؤال','حديقة','كتاب','مدينة'],
+  ['طائرة','سيارة','قطار','دراجة','سفينة'],
+  ['طبيعة','جبل','نهر','شجرة','نجمة'],
+  ['صباح','مساء','نهار','ليل','ساعة'],
+  ['مكتبة','مطعم','فندق','متجر','ملعب'],
+  ['مسابقة','تحدي','منافسة','بطولة','جائزة'],
+  ['مستقبل','اختراع','اكتشاف','تطور','ابتكار'],
+  ['سعادة','أمان','حلم','عزم','إبداع'],
+];
 function initDecode(){
+  _dc={lv:1,maxLv:8,q:0,perLv:4,score:0,word:''};
+  decRender();
+}
+function decRender(){
   const area=document.getElementById('gameArea');
-  const words=['المدرسة','السفر','الصيف','الطعام','الجبل','النجوم','الرياضة','الكتاب'];
-  const w=words[Math.floor(Math.random()*words.length)];
+  const pool=_decWords[Math.min(_dc.lv-1,_decWords.length-1)];
+  const w=pool[Math.floor(Math.random()*pool.length)];
+  _dc.word=w;
   const sh=w.split('').sort(()=>Math.random()-0.5).join('');
-  _dec=w;
   area.innerHTML=`<div class="q-area" style="max-width:380px;margin:0 auto;text-align:center">
-    <h3>🔐 ${t("فك التشفير","Decode the Word")}</h3>
+    ${lvHead(_dc.lv,_dc.score,_dc.perLv,'🔐 ')}
+    <h3>${t("فك التشفير","Decode the Word")}</h3>
     <p style="color:var(--sub);font-size:.9rem">${t("رتب الحروف لاستعادة الكلمة المرمزة","Unscramble to decode the hidden word")}</p>
     <div style="font-size:1.6rem;letter-spacing:6px;color:var(--neon);margin:16px 0;font-weight:900">${sh.split('').join(' ')}</div>
     <input id="decIn" style="width:100%;padding:12px;border-radius:12px;border:1px solid #ffffff33;background:#ffffff10;color:#fff;text-align:center;box-sizing:border-box;font-size:1.2rem;letter-spacing:4px" onkeydown="if(event.key==='Enter')decCheck()">
     <button class="btn blue mt" style="width:100%" onclick="decCheck()">${t("تحقق","Check")}</button>
     <div id="decMsg" style="min-height:22px;margin-top:8px;font-weight:800"></div>
   </div>`;
+  document.getElementById('decIn').focus();
 }
 function decCheck(){
   const e=document.getElementById('decIn');if(!e)return;
   const m=document.getElementById('decMsg');
-  if(e.value.trim()===_dec){m.textContent=t("🎉 صحيح","🎉 Correct");m.style.color='#22c55e';}
-  else{m.textContent=t("❌ الجواب","❌ Answer")+': '+_dec;m.style.color='#ef4444';}
+  if(e.value.trim()===_dc.word){m.textContent=t("🎉 صحيح","🎉 Correct");m.style.color='#22c55e';_dc.score++;}
+  else{m.textContent=t("❌ الجواب","❌ Answer")+': '+_dc.word;m.style.color='#ef4444';}
+  e.disabled=true;_dc.q++;
+  setTimeout(()=>{if(_dc.q>=_dc.perLv){if(_dc.lv>=_dc.maxLv){award(3);lvOver('initDecode()','true',_dc.score,t("🎉 أنهيت كل المستويات!","🎉 All levels complete!"));return;}lvOver('decNextLv','',_dc.score,null);return;}decRender();},1000);
 }
+function decNextLv(){_dc.lv++;_dc.q=0;decRender();}
 /* ================== الخائن (أونلاين) ================== */
 function initTraitor(){
   const area=document.getElementById('gameArea');
